@@ -108,6 +108,13 @@ int main( int argc, char *argv[] )
     mbedtls_ssl_config conf;
     mbedtls_x509_crt cacert;
     mbedtls_timing_delay_context timer;
+    int     mCipherSuites[2];
+    mCipherSuites[0] = MBEDTLS_TLS_ECJPAKE_WITH_AES_128_CCM_8;
+    mCipherSuites[1] = 0;
+    //#define kPskMaxLength 32
+    uint8_t mPsk[] = "JOINME";
+    uint8_t mPskLength = sizeof(mPsk);
+    int rval;
 
     ((void) argc);
     ((void) argv);
@@ -192,7 +199,7 @@ int main( int argc, char *argv[] )
     mbedtls_ssl_conf_ca_chain( &conf, &cacert, NULL );
     mbedtls_ssl_conf_rng( &conf, mbedtls_ctr_drbg_random, &ctr_drbg );
     mbedtls_ssl_conf_dbg( &conf, my_debug, stdout );
-
+    mbedtls_ssl_conf_ciphersuites(&conf, mCipherSuites);
     if( ( ret = mbedtls_ssl_setup( &ssl, &conf ) ) != 0 )
     {
         mbedtls_printf( " failed\n  ! mbedtls_ssl_setup returned %d\n\n", ret );
@@ -210,6 +217,7 @@ int main( int argc, char *argv[] )
 
     mbedtls_ssl_set_timer_cb( &ssl, &timer, mbedtls_timing_set_delay,
                                             mbedtls_timing_get_delay );
+    rval = mbedtls_ssl_set_hs_ecjpake_password(&ssl, mPsk, mPskLength);
 
     mbedtls_printf( " ok\n" );
 

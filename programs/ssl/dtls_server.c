@@ -122,6 +122,13 @@ int main( void )
 #if defined(MBEDTLS_SSL_CACHE_C)
     mbedtls_ssl_cache_context cache;
 #endif
+    int     mCipherSuites[2];
+    mCipherSuites[0] = MBEDTLS_TLS_ECJPAKE_WITH_AES_128_CCM_8;
+    mCipherSuites[1] = 0;
+    //#define kPskMaxLength 32
+    uint8_t mPsk[] = "JOINME";
+    uint8_t mPskLength = sizeof(mPsk);
+    int rval;
 
     mbedtls_net_init( &listen_fd );
     mbedtls_net_init( &client_fd );
@@ -238,6 +245,8 @@ int main( void )
         goto exit;
     }
 
+    mbedtls_ssl_conf_ciphersuites(&conf, mCipherSuites);
+
     if( ( ret = mbedtls_ssl_cookie_setup( &cookie_ctx,
                                   mbedtls_ctr_drbg_random, &ctr_drbg ) ) != 0 )
     {
@@ -272,6 +281,7 @@ reset:
     mbedtls_net_free( &client_fd );
 
     mbedtls_ssl_session_reset( &ssl );
+    rval = mbedtls_ssl_set_hs_ecjpake_password(&ssl, mPsk, mPskLength);
 
     /*
      * 3. Wait until a client connects
