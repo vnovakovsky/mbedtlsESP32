@@ -75,7 +75,8 @@ int main( void )
 #define SERVER_ADDR "::1"
 #endif
 
-#define MESSAGE     "Echo this"
+#define COMMISSIONER_GREETING     "commissioner greeting"
+#define JOINER_GREETING           "joiner greeting"
 
 #define READ_TIMEOUT_MS 1000
 #define MAX_RETRY       5
@@ -111,13 +112,33 @@ int main( int argc, char *argv[] )
     int     mCipherSuites[2];
     mCipherSuites[0] = MBEDTLS_TLS_ECJPAKE_WITH_AES_128_CCM_8;
     mCipherSuites[1] = 0;
-    //#define kPskMaxLength 32
-    uint8_t mPsk[] = "JOINME";
-    uint8_t mPskLength = sizeof(mPsk);
+    #define kPskMaxLength 32
+    uint8_t mPsk[kPskMaxLength] = "IAMCOMMISSIONER";              // PSKc
+    uint8_t mPskLength = strlen(mPsk) + 1;
     int rval;
 
-    ((void) argc);
-    ((void) argv);
+    char* PSKd = "JOINME";
+    char message[1024] = "";
+    strcpy(message, COMMISSIONER_GREETING); // default commissioner greeting
+
+    if (argc == 1)
+    {
+        printf("Usage: for commissioner: dtls_client PSKc PSKd;\nfor joiner: dtls_client PSKd; ");
+    }
+
+    if (argc == 3) // Commissioner case: passes PSKc for his session with router and PSKd for joiner's session
+        // if Joiner try to add himself to network he passes PSKd
+    {
+        strcpy(mPsk, argv[1]); // PSKc is used here for DTLS handshake
+        PSKd = argv[2];
+        strcpy(message, PSKd); // will be passed to dtls_server(router)
+    }
+    else if (argc == 2) // Joiner case: tries to add himself to network passing PSKd
+    {
+        PSKd = argv[1];
+        strcpy(message, JOINER_GREETING);
+        strcpy(mPsk, PSKd); // PSKd is used here for DTLS handshake
+    }
 
 #if defined(MBEDTLS_DEBUG_C)
     mbedtls_debug_set_threshold( DEBUG_LEVEL );
@@ -267,9 +288,9 @@ send_request:
     mbedtls_printf( "  > Write to server:" );
     fflush( stdout );
 
-    len = sizeof( MESSAGE ) - 1;
+    len = strlen(message);
 
-    do ret = mbedtls_ssl_write( &ssl, (unsigned char *) MESSAGE, len );
+    do ret = mbedtls_ssl_write( &ssl, (unsigned char *)message, len );
     while( ret == MBEDTLS_ERR_SSL_WANT_READ ||
            ret == MBEDTLS_ERR_SSL_WANT_WRITE );
 
@@ -280,7 +301,7 @@ send_request:
     }
 
     len = ret;
-    mbedtls_printf( " %d bytes written\n\n%s\n\n", len, MESSAGE );
+    mbedtls_printf( " %d bytes written\n\n%s\n\n", len, message);
 
     /*
      * 7. Read the echo response
@@ -288,7 +309,7 @@ send_request:
     mbedtls_printf( "  < Read from server:" );
     fflush( stdout );
 
-    len = sizeof( buf ) - 1;
+    len = strlen( buf );
     memset( buf, 0, sizeof( buf ) );
 
     do ret = mbedtls_ssl_read( &ssl, buf, len );

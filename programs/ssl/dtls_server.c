@@ -90,6 +90,7 @@ int main( void )
 
 #define READ_TIMEOUT_MS 10000   /* 5 seconds */
 #define DEBUG_LEVEL 0
+#define JOINER_GREETING           "joiner greeting"
 
 
 static void my_debug( void *ctx, int level,
@@ -125,9 +126,10 @@ int main( void )
     int     mCipherSuites[2];
     mCipherSuites[0] = MBEDTLS_TLS_ECJPAKE_WITH_AES_128_CCM_8;
     mCipherSuites[1] = 0;
-    //#define kPskMaxLength 32
-    uint8_t mPsk[] = "JOINME";
-    uint8_t mPskLength = sizeof(mPsk);
+    #define kPskc "IAMCOMMISSIONER"
+    #define kPskMaxLength 32
+    uint8_t mPsk[kPskMaxLength] = kPskc;
+    uint8_t mPskLength = strlen(mPsk) + 1;
     int rval;
 
     mbedtls_net_init( &listen_fd );
@@ -329,6 +331,7 @@ reset:
     else if( ret != 0 )
     {
         printf( " failed\n  ! mbedtls_ssl_handshake returned -0x%x\n\n", (unsigned int) -ret );
+        strcpy(mPsk, kPskc); // rollback to commissioner session
         goto reset;
     }
 
@@ -368,6 +371,17 @@ reset:
 
     len = ret;
     printf( " %d bytes read\n\n%s\n\n", len, buf );
+    if (strcmp(JOINER_GREETING, buf) != 0)
+    {
+        // this is commissioner session - he passes PSKd. Server will switch to mode
+        // when it will wait for Joiner. Therefore server changes jpake password to PSKd
+        strcpy(mPsk, buf);
+    }
+    else // Joiner's session
+    {
+        strcpy(buf, "you are joined. masterkey is 0123456789ABCDF");
+        strcpy(mPsk, kPskc); // back to commissioner mode
+    }
 
     /*
      * 7. Write the 200 Response
@@ -375,7 +389,7 @@ reset:
     printf( "  > Write to client:" );
     fflush( stdout );
 
-    do ret = mbedtls_ssl_write( &ssl, buf, len );
+    do ret = mbedtls_ssl_write( &ssl, buf, strlen(buf) );
     while( ret == MBEDTLS_ERR_SSL_WANT_READ ||
            ret == MBEDTLS_ERR_SSL_WANT_WRITE );
 
@@ -393,6 +407,8 @@ reset:
      */
 close_notify:
     printf( "  . Closing the connection..." );
+    Sleep(5000); // wait untill client will call mbedtls_ssl_close_notify (with old credentials)
+                 // - otherwise server would change session password earlier then mbedtls_ssl_close_notify happens
 
     /* No error checking, the connection might be closed already */
     do ret = mbedtls_ssl_close_notify( &ssl );
