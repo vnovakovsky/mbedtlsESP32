@@ -1,0 +1,59 @@
+I:\projects\openthread\mbedtls\github\mbedtls\visualc\VS2010\Debug>dtls_server
+
+  . Loading the server cert. and key... ok
+  . Bind on udp/*/4433 ... ok
+  . Seeding the random number generator... ok
+  . Setting up the DTLS data... ok
+  . Waiting for a remote connection ... ok
+  . Performing the DTLS handshake... hello verification requested
+  . Waiting for a remote connection ... ok
+  . Performing the DTLS handshake... ok
+  < Read from client: 7 bytes read
+
+JOINME1
+
+  > Write to client: 7 bytes written
+
+JOINME1
+
+  . Closing the connection... done
+  . Waiting for a remote connection ... ok
+  . Performing the DTLS handshake... hello verification requested
+  . Waiting for a remote connection ... ok
+  . Performing the DTLS handshake... ok
+  < Read from client: 15 bytes read
+
+joiner greeting
+
+  > Write to client: 44 bytes written
+
+you are joined. masterkey is 0123456789ABCDF
+
+  . Closing the connection... done
+  . Waiting for a remote connection ... ok
+  . Performing the DTLS handshake... hello verification requested
+  . Waiting for a remote connection ... ok
+  . Performing the DTLS handshake... ok
+  < Read from client: 7 bytes read
+
+JOINME2
+
+  > Write to client: 7 bytes written
+
+JOINME2
+
+  . Closing the connection... done
+  . Waiting for a remote connection ... ok
+  . Performing the DTLS handshake... hello verification requested
+  . Waiting for a remote connection ... ok
+  . Performing the DTLS handshake... ok
+  < Read from client: 15 bytes read
+
+joiner greeting
+
+  > Write to client: 44 bytes written
+
+you are joined. masterkey is 0123456789ABCDF
+
+  . Closing the connection... done
+  . Waiting for a remote connection ...

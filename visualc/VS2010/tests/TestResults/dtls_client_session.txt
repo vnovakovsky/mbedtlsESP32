@@ -1,0 +1,81 @@
+I:\projects\openthread\mbedtls\github\mbedtls\visualc\VS2010\Debug>dtls_client.exe IAMCOMMISSIONER JOINME1
+
+  . Seeding the random number generator... ok
+  . Loading the CA root certificate ... ok (0 skipped)
+  . Connecting to udp/localhost/4433... ok
+  . Setting up the DTLS structure... ok
+  . Performing the DTLS handshake... ok
+  . Verifying peer X.509 certificate... ok
+  > Write to server: 7 bytes written
+
+JOINME1
+
+  < Read from server: 7 bytes read
+
+JOINME1
+
+  . Closing the connection... done
+  + Press Enter to exit this program.
+  
+I:\projects\openthread\mbedtls\github\mbedtls\visualc\VS2010\Debug>dtls_client.exe JOINME1
+
+  . Seeding the random number generator... ok
+  . Loading the CA root certificate ... ok (0 skipped)
+  . Connecting to udp/localhost/4433... ok
+  . Setting up the DTLS structure... ok
+  . Performing the DTLS handshake... ok
+  . Verifying peer X.509 certificate... ok
+  > Write to server: 15 bytes written
+
+joiner greeting
+
+  < Read from server: 44 bytes read
+
+you are joined. masterkey is 0123456789ABCDF
+
+  . Closing the connection... done
+  + Press Enter to exit this program.
+
+  
+  
+ I:\projects\openthread\mbedtls\github\mbedtls\visualc\VS2010\Debug>dtls_client.exe IAMCOMMISSIONER JOINME2
+
+  . Seeding the random number generator... ok
+  . Loading the CA root certificate ... ok (0 skipped)
+  . Connecting to udp/localhost/4433... ok
+  . Setting up the DTLS structure... ok
+  . Performing the DTLS handshake... ok
+  . Verifying peer X.509 certificate... ok
+  > Write to server: 7 bytes written
+
+JOINME2
+
+  < Read from server: 7 bytes read
+
+JOINME2
+
+  . Closing the connection... done
+  + Press Enter to exit this program.
+
+I:\projects\openthread\mbedtls\github\mbedtls\visualc\VS2010\Debug>dtls_joiner_J2.bat
+
+I:\projects\openthread\mbedtls\github\mbedtls\visualc\VS2010\Debug>REM Joiner passes only PSKd
+
+I:\projects\openthread\mbedtls\github\mbedtls\visualc\VS2010\Debug>dtls_client.exe JOINME2
+
+  . Seeding the random number generator... ok
+  . Loading the CA root certificate ... ok (0 skipped)
+  . Connecting to udp/localhost/4433... ok
+  . Setting up the DTLS structure... ok
+  . Performing the DTLS handshake... ok
+  . Verifying peer X.509 certificate... ok
+  > Write to server: 15 bytes written
+
+joiner greeting
+
+  < Read from server: 44 bytes read
+
+you are joined. masterkey is 0123456789ABCDF
+
+  . Closing the connection... done
+  + Press Enter to exit this program.
