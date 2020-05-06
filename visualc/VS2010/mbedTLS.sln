@@ -1,6 +1,8 @@
 ﻿
-Microsoft Visual Studio Solution File, Format Version 11.00
-# Visual C++ Express 2010
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.29806.167
+MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mbedTLS", "mbedTLS.vcxproj", "{46CF2D25-6A36-4189-B59C-E4815388E554}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "aescrypt2", "aescrypt2.vcxproj", "{7A851DBD-7D57-E8F4-85E5-CCA72AEA7DF8}"
@@ -158,10 +160,17 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "dtls_client", "dtls_client.
 		{46CF2D25-6A36-4189-B59C-E4815388E554} = {46CF2D25-6A36-4189-B59C-E4815388E554}
 	EndProjectSection
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "dtls_psk_client", "dtls_psk_client.vcxproj", "{FE7AB78F-DBF1-0721-3522-0D7C3011D2E6}"
+	ProjectSection(ProjectDependencies) = postProject
+		{46CF2D25-6A36-4189-B59C-E4815388E554} = {46CF2D25-6A36-4189-B59C-E4815388E554}
+	EndProjectSection
+EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "dtls_server", "dtls_server.vcxproj", "{BFE89EAA-D98B-34E1-C5A4-4080F6FFE317}"
 	ProjectSection(ProjectDependencies) = postProject
 		{46CF2D25-6A36-4189-B59C-E4815388E554} = {46CF2D25-6A36-4189-B59C-E4815388E554}
 	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "dtls_psk_server", "dtls_psk_server.vcxproj", "{BFE89EAA-D98B-34E1-C5A4-4080F6FFE318}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mini_client", "mini_client.vcxproj", "{C4FE29EA-266D-5295-4840-976B9B5B3843}"
 	ProjectSection(ProjectDependencies) = postProject
@@ -527,6 +536,14 @@ Global
 		{FE7AB78F-DBF1-0721-3522-0D7C3011D2E5}.Release|Win32.Build.0 = Release|Win32
 		{FE7AB78F-DBF1-0721-3522-0D7C3011D2E5}.Release|x64.ActiveCfg = Release|x64
 		{FE7AB78F-DBF1-0721-3522-0D7C3011D2E5}.Release|x64.Build.0 = Release|x64
+		{FE7AB78F-DBF1-0721-3522-0D7C3011D2E6}.Debug|Win32.ActiveCfg = Debug|Win32
+		{FE7AB78F-DBF1-0721-3522-0D7C3011D2E6}.Debug|Win32.Build.0 = Debug|Win32
+		{FE7AB78F-DBF1-0721-3522-0D7C3011D2E6}.Debug|x64.ActiveCfg = Debug|x64
+		{FE7AB78F-DBF1-0721-3522-0D7C3011D2E6}.Debug|x64.Build.0 = Debug|x64
+		{FE7AB78F-DBF1-0721-3522-0D7C3011D2E6}.Release|Win32.ActiveCfg = Release|Win32
+		{FE7AB78F-DBF1-0721-3522-0D7C3011D2E6}.Release|Win32.Build.0 = Release|Win32
+		{FE7AB78F-DBF1-0721-3522-0D7C3011D2E6}.Release|x64.ActiveCfg = Release|x64
+		{FE7AB78F-DBF1-0721-3522-0D7C3011D2E6}.Release|x64.Build.0 = Release|x64
 		{BFE89EAA-D98B-34E1-C5A4-4080F6FFE317}.Debug|Win32.ActiveCfg = Debug|Win32
 		{BFE89EAA-D98B-34E1-C5A4-4080F6FFE317}.Debug|Win32.Build.0 = Debug|Win32
 		{BFE89EAA-D98B-34E1-C5A4-4080F6FFE317}.Debug|x64.ActiveCfg = Debug|x64
@@ -534,7 +551,13 @@ Global
 		{BFE89EAA-D98B-34E1-C5A4-4080F6FFE317}.Release|Win32.ActiveCfg = Release|Win32
 		{BFE89EAA-D98B-34E1-C5A4-4080F6FFE317}.Release|Win32.Build.0 = Release|Win32
 		{BFE89EAA-D98B-34E1-C5A4-4080F6FFE317}.Release|x64.ActiveCfg = Release|x64
-		{BFE89EAA-D98B-34E1-C5A4-4080F6FFE317}.Release|x64.Build.0 = Release|x64
+		{BFE89EAA-D98B-34E1-C5A4-4080F6FFE318}.Debug|Win32.ActiveCfg = Debug|Win32
+		{BFE89EAA-D98B-34E1-C5A4-4080F6FFE318}.Debug|Win32.Build.0 = Debug|Win32
+		{BFE89EAA-D98B-34E1-C5A4-4080F6FFE318}.Debug|x64.ActiveCfg = Debug|x64
+		{BFE89EAA-D98B-34E1-C5A4-4080F6FFE318}.Debug|x64.Build.0 = Debug|x64
+		{BFE89EAA-D98B-34E1-C5A4-4080F6FFE318}.Release|Win32.ActiveCfg = Release|Win32
+		{BFE89EAA-D98B-34E1-C5A4-4080F6FFE318}.Release|Win32.Build.0 = Release|Win32
+		{BFE89EAA-D98B-34E1-C5A4-4080F6FFE318}.Release|x64.ActiveCfg = Release|x64
 		{C4FE29EA-266D-5295-4840-976B9B5B3843}.Debug|Win32.ActiveCfg = Debug|Win32
 		{C4FE29EA-266D-5295-4840-976B9B5B3843}.Debug|Win32.Build.0 = Debug|Win32
 		{C4FE29EA-266D-5295-4840-976B9B5B3843}.Debug|x64.ActiveCfg = Debug|x64
@@ -698,5 +721,8 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {44FD26EB-C019-4458-B63C-C50C7128D100}
 	EndGlobalSection
 EndGlobal

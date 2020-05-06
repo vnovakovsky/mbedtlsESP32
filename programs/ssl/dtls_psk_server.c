@@ -90,7 +90,6 @@ int main( void )
 
 #define READ_TIMEOUT_MS 10000   /* 5 seconds */
 #define DEBUG_LEVEL 0
-#define JOINER_GREETING           "joiner greeting"
 
 
 static void my_debug( void *ctx, int level,
@@ -103,8 +102,21 @@ static void my_debug( void *ctx, int level,
     fflush(  (FILE *) ctx  );
 }
 
-int main( void )
+int main(int argc, char* argv[])
 {
+    int     mCipherSuites[2];
+    mCipherSuites[0] = MBEDTLS_TLS_PSK_WITH_AES_128_CCM_8;
+    mCipherSuites[1] = 0;
+    #define kPskMaxLength 32
+    uint8_t mPsk[kPskMaxLength] = "";
+    uint8_t mPskLength = 0;// = strlen(mPsk) + 1;
+    int rval;
+    if (argc != 2)
+    {
+        printf("Usage: for psk client: dtls_psk_server PSK\n");
+        return -1;
+    }
+    strcpy(mPsk, argv[1]); // PSK is used here for DTLS handshake
     int ret, len;
     mbedtls_net_context listen_fd, client_fd;
     unsigned char buf[1024];
@@ -112,7 +124,6 @@ int main( void )
     unsigned char client_ip[16] = { 0 };
     size_t cliip_len;
     mbedtls_ssl_cookie_ctx cookie_ctx;
-
     mbedtls_entropy_context entropy;
     mbedtls_ctr_drbg_context ctr_drbg;
     mbedtls_ssl_context ssl;
@@ -123,14 +134,7 @@ int main( void )
 #if defined(MBEDTLS_SSL_CACHE_C)
     mbedtls_ssl_cache_context cache;
 #endif
-    int     mCipherSuites[2];
-    mCipherSuites[0] = MBEDTLS_TLS_ECJPAKE_WITH_AES_128_CCM_8;
-    mCipherSuites[1] = 0;
-    #define kPskc "IAMCOMMISSIONER"
-    #define kPskMaxLength 32
-    uint8_t mPsk[kPskMaxLength] = kPskc;
-    uint8_t mPskLength = strlen(mPsk) + 1;
-    int rval;
+    
 
     mbedtls_net_init( &listen_fd );
     mbedtls_net_init( &client_fd );
@@ -248,6 +252,8 @@ int main( void )
     }
 
     mbedtls_ssl_conf_ciphersuites(&conf, mCipherSuites);
+    mbedtls_ssl_conf_psk(&conf, (const unsigned char*)mPsk, strlen(mPsk),
+        (const unsigned char*)"keyid", 5);
 
     if( ( ret = mbedtls_ssl_cookie_setup( &cookie_ctx,
                                   mbedtls_ctr_drbg_random, &ctr_drbg ) ) != 0 )
@@ -283,7 +289,6 @@ reset:
     mbedtls_net_free( &client_fd );
 
     mbedtls_ssl_session_reset( &ssl );
-    rval = mbedtls_ssl_set_hs_ecjpake_password(&ssl, mPsk, mPskLength);
 
     /*
      * 3. Wait until a client connects
@@ -331,7 +336,6 @@ reset:
     else if( ret != 0 )
     {
         printf( " failed\n  ! mbedtls_ssl_handshake returned -0x%x\n\n", (unsigned int) -ret );
-        strcpy(mPsk, kPskc); // rollback to commissioner session
         goto reset;
     }
 
@@ -371,17 +375,6 @@ reset:
 
     len = ret;
     printf( " %d bytes read\n\n%s\n\n", len, buf );
-    if (strcmp(JOINER_GREETING, buf) != 0)
-    {
-        // this is commissioner session - he passes PSKd. Server will switch to mode
-        // when it will wait for Joiner. Therefore server changes jpake password to PSKd
-        strcpy(mPsk, buf);
-    }
-    else // Joiner's session
-    {
-        strcpy(buf, "you are joined. masterkey is 00112233445566778899aabbccddeeff");
-        strcpy(mPsk, kPskc); // back to commissioner mode
-    }
 
     /*
      * 7. Write the 200 Response
@@ -389,7 +382,7 @@ reset:
     printf( "  > Write to client:" );
     fflush( stdout );
 
-    do ret = mbedtls_ssl_write( &ssl, buf, strlen(buf) );
+    do ret = mbedtls_ssl_write( &ssl, buf, len );
     while( ret == MBEDTLS_ERR_SSL_WANT_READ ||
            ret == MBEDTLS_ERR_SSL_WANT_WRITE );
 
@@ -407,8 +400,6 @@ reset:
      */
 close_notify:
     printf( "  . Closing the connection..." );
-    Sleep(5000); // wait untill client will call mbedtls_ssl_close_notify (with old credentials)
-                 // - otherwise server would change session password earlier then mbedtls_ssl_close_notify happens
 
     /* No error checking, the connection might be closed already */
     do ret = mbedtls_ssl_close_notify( &ssl );
