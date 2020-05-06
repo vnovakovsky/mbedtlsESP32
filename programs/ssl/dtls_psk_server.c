@@ -75,8 +75,6 @@ int main( void )
 
 #include "mbedtls/entropy.h"
 #include "mbedtls/ctr_drbg.h"
-#include "mbedtls/certs.h"
-#include "mbedtls/x509.h"
 #include "mbedtls/ssl.h"
 #include "mbedtls/ssl_cookie.h"
 #include "mbedtls/net_sockets.h"
@@ -107,9 +105,8 @@ int main(int argc, char* argv[])
     int     mCipherSuites[2];
     mCipherSuites[0] = MBEDTLS_TLS_PSK_WITH_AES_128_CCM_8;
     mCipherSuites[1] = 0;
-    #define kPskMaxLength 32
+    enum PskLength { kPskMaxLength = 32 };
     uint8_t mPsk[kPskMaxLength] = "";
-    uint8_t mPskLength = 0;// = strlen(mPsk) + 1;
     int rval;
     if (argc != 2)
     {
@@ -128,8 +125,6 @@ int main(int argc, char* argv[])
     mbedtls_ctr_drbg_context ctr_drbg;
     mbedtls_ssl_context ssl;
     mbedtls_ssl_config conf;
-    mbedtls_x509_crt srvcert;
-    mbedtls_pk_context pkey;
     mbedtls_timing_delay_context timer;
 #if defined(MBEDTLS_SSL_CACHE_C)
     mbedtls_ssl_cache_context cache;
@@ -144,51 +139,12 @@ int main(int argc, char* argv[])
 #if defined(MBEDTLS_SSL_CACHE_C)
     mbedtls_ssl_cache_init( &cache );
 #endif
-    mbedtls_x509_crt_init( &srvcert );
-    mbedtls_pk_init( &pkey );
     mbedtls_entropy_init( &entropy );
     mbedtls_ctr_drbg_init( &ctr_drbg );
 
 #if defined(MBEDTLS_DEBUG_C)
     mbedtls_debug_set_threshold( DEBUG_LEVEL );
 #endif
-
-    /*
-     * 1. Load the certificates and private RSA key
-     */
-    printf( "\n  . Loading the server cert. and key..." );
-    fflush( stdout );
-
-    /*
-     * This demonstration program uses embedded test certificates.
-     * Instead, you may want to use mbedtls_x509_crt_parse_file() to read the
-     * server and CA certificates, as well as mbedtls_pk_parse_keyfile().
-     */
-    ret = mbedtls_x509_crt_parse( &srvcert, (const unsigned char *) mbedtls_test_srv_crt,
-                          mbedtls_test_srv_crt_len );
-    if( ret != 0 )
-    {
-        printf( " failed\n  !  mbedtls_x509_crt_parse returned %d\n\n", ret );
-        goto exit;
-    }
-
-    ret = mbedtls_x509_crt_parse( &srvcert, (const unsigned char *) mbedtls_test_cas_pem,
-                          mbedtls_test_cas_pem_len );
-    if( ret != 0 )
-    {
-        printf( " failed\n  !  mbedtls_x509_crt_parse returned %d\n\n", ret );
-        goto exit;
-    }
-
-    ret =  mbedtls_pk_parse_key( &pkey, (const unsigned char *) mbedtls_test_srv_key,
-                         mbedtls_test_srv_key_len, NULL, 0 );
-    if( ret != 0 )
-    {
-        printf( " failed\n  !  mbedtls_pk_parse_key returned %d\n\n", ret );
-        goto exit;
-    }
-
-    printf( " ok\n" );
 
     /*
      * 2. Setup the "listening" UDP socket
@@ -243,13 +199,6 @@ int main(int argc, char* argv[])
                                    mbedtls_ssl_cache_get,
                                    mbedtls_ssl_cache_set );
 #endif
-
-    mbedtls_ssl_conf_ca_chain( &conf, srvcert.next, NULL );
-   if( ( ret = mbedtls_ssl_conf_own_cert( &conf, &srvcert, &pkey ) ) != 0 )
-    {
-        printf( " failed\n  ! mbedtls_ssl_conf_own_cert returned %d\n\n", ret );
-        goto exit;
-    }
 
     mbedtls_ssl_conf_ciphersuites(&conf, mCipherSuites);
     mbedtls_ssl_conf_psk(&conf, (const unsigned char*)mPsk, strlen(mPsk),
@@ -427,8 +376,6 @@ exit:
     mbedtls_net_free( &client_fd );
     mbedtls_net_free( &listen_fd );
 
-    mbedtls_x509_crt_free( &srvcert );
-    mbedtls_pk_free( &pkey );
     mbedtls_ssl_free( &ssl );
     mbedtls_ssl_config_free( &conf );
     mbedtls_ssl_cookie_free( &cookie_ctx );
