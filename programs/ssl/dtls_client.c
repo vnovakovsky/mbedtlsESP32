@@ -116,7 +116,7 @@ int main( int argc, char *argv[] )
     uint8_t jpsk_length = strlen(jpsk);
     int rval;
 
-    char* PSKd = "JOINME";
+    char* PSKd;
     char message[1024] = "";
     strcpy(message, COMMISSIONER_GREETING); // default commissioner greeting
 
@@ -134,9 +134,9 @@ int main( int argc, char *argv[] )
     }
     else if (argc == 2) // Joiner case: tries to add himself to network passing PSKd
     {
-        PSKd = argv[1];
+        //PSKd = argv[1];
         strcpy(message, JOINER_GREETING);
-        strcpy(jpsk, PSKd); // PSKd is used here for DTLS handshake
+        strcpy(jpsk, argv[1]); // PSKd is used here for DTLS handshake
     }
 
 #if defined(MBEDTLS_DEBUG_C)
@@ -200,6 +200,7 @@ int main( int argc, char *argv[] )
      * Production code should set a proper ca chain and use REQUIRED. */
     mbedtls_ssl_conf_authmode( &conf, MBEDTLS_SSL_VERIFY_OPTIONAL );
     mbedtls_ssl_conf_rng( &conf, mbedtls_ctr_drbg_random, &ctr_drbg );
+    mbedtls_ssl_conf_handshake_timeout(&conf, 1000, 120000);
     mbedtls_ssl_conf_dbg( &conf, my_debug, stdout );
     mbedtls_ssl_conf_ciphersuites(&conf, mCipherSuites);
     if( ( ret = mbedtls_ssl_setup( &ssl, &conf ) ) != 0 )
@@ -219,7 +220,7 @@ int main( int argc, char *argv[] )
 
     mbedtls_ssl_set_timer_cb( &ssl, &timer, mbedtls_timing_set_delay,
                                             mbedtls_timing_get_delay );
-    mbedtls_ssl_set_hs_ecjpake_password(&ssl, jpsk, jpsk_length);
+    mbedtls_ssl_set_hs_ecjpake_password(&ssl, jpsk, strlen(jpsk));
 
     mbedtls_printf( " ok\n" );
 

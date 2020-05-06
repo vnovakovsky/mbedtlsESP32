@@ -101,17 +101,29 @@ static void my_debug( void *ctx, int level,
     fflush(  (FILE *) ctx  );
 }
 
-int main( void )
+int main(int argc, char* argv[])
 {
-    int     mCipherSuites[2];
+    int     mCipherSuites[4];
     mCipherSuites[0] = MBEDTLS_TLS_ECJPAKE_WITH_AES_128_CCM_8;
-    mCipherSuites[1] = 0;
+    mCipherSuites[1] = MBEDTLS_TLS_PSK_WITH_AES_128_CCM_8;
+	mCipherSuites[2] = 0;
+	mCipherSuites[3] = 0;
     // kPskc is stored persistently in router
     const char *kPskc = "IAMCOMMISSIONER";
     enum PskLength { kPskMaxLength = 32 };
     uint8_t jpsk[kPskMaxLength] = "";
     strcpy(jpsk, kPskc);
     uint8_t jpsk_length = strlen(jpsk);
+	
+	uint8_t psk[kPskMaxLength] = "";
+
+    if (argc != 2)
+    {
+        printf("Usage: for psk client: dtls_psk_server PSK\n");
+        return -1;
+    }
+    strcpy(psk, argv[1]); // PSK is used here for DTLS handshake
+	
     int ret, len;
     mbedtls_net_context listen_fd, client_fd;
     unsigned char buf[1024];
@@ -200,6 +212,8 @@ int main( void )
 #endif
 
     mbedtls_ssl_conf_ciphersuites(&conf, mCipherSuites);
+    mbedtls_ssl_conf_psk(&conf, (const unsigned char*)psk, strlen(psk),
+        (const unsigned char*)"keyid", 5);
 
     if( ( ret = mbedtls_ssl_cookie_setup( &cookie_ctx,
                                   mbedtls_ctr_drbg_random, &ctr_drbg ) ) != 0 )
@@ -323,7 +337,14 @@ reset:
 
     len = ret;
     printf( " %d bytes read\n\n%s\n\n", len, buf );
-    if (strcmp(JOINER_GREETING, buf) != 0)
+    if (strcmp("some data", buf) == 0) // regular traffic
+    {
+        // this is commissioner session - he passes PSKd. Server will switch to mode
+        // when it will wait for Joiner. Therefore server changes jpake password to PSKd
+        strcpy(jpsk, kPskc); // back to commissioner mode
+        printf("regular pskc: %s\n", jpsk);
+    }
+    else if (strcmp(JOINER_GREETING, buf) != 0)
     {
         // this is commissioner session - he passes PSKd. Server will switch to mode
         // when it will wait for Joiner. Therefore server changes jpake password to PSKd
