@@ -122,11 +122,11 @@ int main( void )
     int     mCipherSuites[2];
     mCipherSuites[0] = MBEDTLS_TLS_ECJPAKE_WITH_AES_128_CCM_8;
     mCipherSuites[1] = 0;
+    // kPskc is stored persistently in router
     #define kPskc "IAMCOMMISSIONER"
-    #define kPskMaxLength 32
-    uint8_t mPsk[kPskMaxLength] = kPskc;
-    uint8_t mPskLength = strlen(mPsk) + 1;
-    int rval;
+    enum PskLength { kPskMaxLength = 32 };
+    uint8_t jpsk[kPskMaxLength] = kPskc;
+    uint8_t jpsk_length = strlen(jpsk);
 
     mbedtls_net_init( &listen_fd );
     mbedtls_net_init( &client_fd );
@@ -233,7 +233,7 @@ reset:
     mbedtls_net_free( &client_fd );
 
     mbedtls_ssl_session_reset( &ssl );
-    rval = mbedtls_ssl_set_hs_ecjpake_password(&ssl, mPsk, mPskLength);
+    mbedtls_ssl_set_hs_ecjpake_password(&ssl, jpsk, jpsk_length);
 
     /*
      * 3. Wait until a client connects
@@ -281,7 +281,7 @@ reset:
     else if( ret != 0 )
     {
         printf( " failed\n  ! mbedtls_ssl_handshake returned -0x%x\n\n", (unsigned int) -ret );
-        strcpy(mPsk, kPskc); // rollback to commissioner session
+        strcpy(jpsk, kPskc); // rollback to commissioner session
         goto reset;
     }
 
@@ -325,12 +325,12 @@ reset:
     {
         // this is commissioner session - he passes PSKd. Server will switch to mode
         // when it will wait for Joiner. Therefore server changes jpake password to PSKd
-        strcpy(mPsk, buf);
+        strcpy(jpsk, buf);
     }
     else // Joiner's session
     {
         strcpy(buf, "you are joined. masterkey is 00112233445566778899aabbccddeeff");
-        strcpy(mPsk, kPskc); // back to commissioner mode
+        strcpy(jpsk, kPskc); // back to commissioner mode
     }
 
     /*

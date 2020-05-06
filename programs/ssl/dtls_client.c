@@ -112,8 +112,8 @@ int main( int argc, char *argv[] )
     mCipherSuites[0] = MBEDTLS_TLS_ECJPAKE_WITH_AES_128_CCM_8;
     mCipherSuites[1] = 0;
     enum PskLength { kPskMaxLength = 32 };
-    uint8_t mPsk[kPskMaxLength] = "IAMCOMMISSIONER";              // PSKc
-    uint8_t mPskLength = strlen(mPsk) + 1;
+    uint8_t jpsk[kPskMaxLength] = "IAMCOMMISSIONER";              // PSKc
+    uint8_t jpsk_length = strlen(jpsk);
     int rval;
 
     char* PSKd = "JOINME";
@@ -128,7 +128,7 @@ int main( int argc, char *argv[] )
     if (argc == 3) // Commissioner case: passes PSKc for his session with router and PSKd for joiner's session
         // if Joiner try to add himself to network he passes PSKd
     {
-        strcpy(mPsk, argv[1]); // PSKc is used here for DTLS handshake
+        strcpy(jpsk, argv[1]); // PSKc is used here for DTLS handshake
         PSKd = argv[2];
         strcpy(message, PSKd); // will be passed to dtls_server(router)
     }
@@ -136,7 +136,7 @@ int main( int argc, char *argv[] )
     {
         PSKd = argv[1];
         strcpy(message, JOINER_GREETING);
-        strcpy(mPsk, PSKd); // PSKd is used here for DTLS handshake
+        strcpy(jpsk, PSKd); // PSKd is used here for DTLS handshake
     }
 
 #if defined(MBEDTLS_DEBUG_C)
@@ -219,7 +219,7 @@ int main( int argc, char *argv[] )
 
     mbedtls_ssl_set_timer_cb( &ssl, &timer, mbedtls_timing_set_delay,
                                             mbedtls_timing_get_delay );
-    rval = mbedtls_ssl_set_hs_ecjpake_password(&ssl, mPsk, mPskLength);
+    mbedtls_ssl_set_hs_ecjpake_password(&ssl, jpsk, jpsk_length);
 
     mbedtls_printf( " ok\n" );
 
