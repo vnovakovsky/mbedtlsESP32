@@ -60,7 +60,6 @@ int main( void )
 #include "mbedtls/entropy.h"
 #include "mbedtls/ctr_drbg.h"
 #include "mbedtls/error.h"
-#include "mbedtls/certs.h"
 #include "mbedtls/timing.h"
 
 /* Uncomment out the following line to default to IPv4 and disable IPv6 */
@@ -112,7 +111,7 @@ int main( int argc, char *argv[] )
     int     mCipherSuites[2];
     mCipherSuites[0] = MBEDTLS_TLS_ECJPAKE_WITH_AES_128_CCM_8;
     mCipherSuites[1] = 0;
-    #define kPskMaxLength 32
+    enum PskLength { kPskMaxLength = 32 };
     uint8_t mPsk[kPskMaxLength] = "IAMCOMMISSIONER";              // PSKc
     uint8_t mPskLength = strlen(mPsk) + 1;
     int rval;
@@ -150,7 +149,6 @@ int main( int argc, char *argv[] )
     mbedtls_net_init( &server_fd );
     mbedtls_ssl_init( &ssl );
     mbedtls_ssl_config_init( &conf );
-    mbedtls_x509_crt_init( &cacert );
     mbedtls_ctr_drbg_init( &ctr_drbg );
 
     mbedtls_printf( "\n  . Seeding the random number generator..." );
@@ -166,22 +164,6 @@ int main( int argc, char *argv[] )
     }
 
     mbedtls_printf( " ok\n" );
-
-    /*
-     * 0. Load certificates
-     */
-    mbedtls_printf( "  . Loading the CA root certificate ..." );
-    fflush( stdout );
-
-    ret = mbedtls_x509_crt_parse( &cacert, (const unsigned char *) mbedtls_test_cas_pem,
-                          mbedtls_test_cas_pem_len );
-    if( ret < 0 )
-    {
-        mbedtls_printf( " failed\n  !  mbedtls_x509_crt_parse returned -0x%x\n\n", (unsigned int) -ret );
-        goto exit;
-    }
-
-    mbedtls_printf( " ok (%d skipped)\n", ret );
 
     /*
      * 1. Start the connection
@@ -217,7 +199,6 @@ int main( int argc, char *argv[] )
      * in this simplified example, in which the ca chain is hardcoded.
      * Production code should set a proper ca chain and use REQUIRED. */
     mbedtls_ssl_conf_authmode( &conf, MBEDTLS_SSL_VERIFY_OPTIONAL );
-    mbedtls_ssl_conf_ca_chain( &conf, &cacert, NULL );
     mbedtls_ssl_conf_rng( &conf, mbedtls_ctr_drbg_random, &ctr_drbg );
     mbedtls_ssl_conf_dbg( &conf, my_debug, stdout );
     mbedtls_ssl_conf_ciphersuites(&conf, mCipherSuites);
@@ -259,27 +240,6 @@ int main( int argc, char *argv[] )
     }
 
     mbedtls_printf( " ok\n" );
-
-    /*
-     * 5. Verify the server certificate
-     */
-    mbedtls_printf( "  . Verifying peer X.509 certificate..." );
-
-    /* In real life, we would have used MBEDTLS_SSL_VERIFY_REQUIRED so that the
-     * handshake would not succeed if the peer's cert is bad.  Even if we used
-     * MBEDTLS_SSL_VERIFY_OPTIONAL, we would bail out here if ret != 0 */
-    if( ( flags = mbedtls_ssl_get_verify_result( &ssl ) ) != 0 )
-    {
-        char vrfy_buf[512];
-
-        mbedtls_printf( " failed\n" );
-
-        mbedtls_x509_crt_verify_info( vrfy_buf, sizeof( vrfy_buf ), "  ! ", flags );
-
-        mbedtls_printf( "%s\n", vrfy_buf );
-    }
-    else
-        mbedtls_printf( " ok\n" );
 
     /*
      * 6. Write the echo request
@@ -369,7 +329,6 @@ exit:
 
     mbedtls_net_free( &server_fd );
 
-    mbedtls_x509_crt_free( &cacert );
     mbedtls_ssl_free( &ssl );
     mbedtls_ssl_config_free( &conf );
     mbedtls_ctr_drbg_free( &ctr_drbg );
