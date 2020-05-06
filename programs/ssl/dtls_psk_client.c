@@ -53,6 +53,7 @@ int main( void )
 #else
 
 #include <string.h>
+#include <assert.h>
 
 #include "mbedtls/net_sockets.h"
 #include "mbedtls/debug.h"
@@ -111,10 +112,8 @@ int main( int argc, char *argv[] )
     int     mCipherSuites[2];
     mCipherSuites[0] = MBEDTLS_TLS_PSK_WITH_AES_128_CCM_8;
     mCipherSuites[1] = 0;
-    #define kPskMaxLength 32
-    uint8_t mPsk[kPskMaxLength] = "";              // PSK
-    uint8_t mPskLength = strlen(mPsk) + 1;
-    int rval;
+    enum PskLength { kPskMaxLength = 32 };
+    uint8_t mPsk[kPskMaxLength] = { 0 };              // PSK
 
     char message[1024] = "";
     strcpy(message, MESSAGE);
@@ -124,7 +123,8 @@ int main( int argc, char *argv[] )
         printf("Usage: for psk client: dtls_psk_client PSK\n");
         return -1;
     }
-    strcpy(mPsk, argv[1]); // PSK is used here for DTLS handshake
+    strncpy(mPsk, argv[1], kPskMaxLength); // PSK is used here for DTLS handshake
+    assert(kPskMaxLength == strlen(argv[1]));
 
 #if defined(MBEDTLS_DEBUG_C)
     mbedtls_debug_set_threshold( DEBUG_LEVEL );
@@ -207,8 +207,10 @@ int main( int argc, char *argv[] )
     mbedtls_ssl_conf_rng( &conf, mbedtls_ctr_drbg_random, &ctr_drbg );
     mbedtls_ssl_conf_dbg( &conf, my_debug, stdout );
     mbedtls_ssl_conf_ciphersuites(&conf, mCipherSuites);
-    mbedtls_ssl_conf_psk(&conf, (const unsigned char*)mPsk, strlen(mPsk),
-        (const unsigned char*)"keyid", 5);
+    const uint8_t key_id[kPskMaxLength] = "keyid";
+    const uint8_t key_id_length = strlen(key_id);
+    mbedtls_ssl_conf_psk(&conf, (const unsigned char*)mPsk, kPskMaxLength,
+        (const unsigned char*)key_id, key_id_length);
     if( ( ret = mbedtls_ssl_setup( &ssl, &conf ) ) != 0 )
     {
         mbedtls_printf( " failed\n  ! mbedtls_ssl_setup returned %d\n\n", ret );
