@@ -106,14 +106,14 @@ int main(int argc, char* argv[])
     mCipherSuites[0] = MBEDTLS_TLS_PSK_WITH_AES_128_CCM_8;
     mCipherSuites[1] = 0;
     enum PskLength { kPskMaxLength = 32 };
-    uint8_t mPsk[kPskMaxLength] = "";
-    int rval;
+    uint8_t psk[kPskMaxLength] = "";
+
     if (argc != 2)
     {
         printf("Usage: for psk client: dtls_psk_server PSK\n");
         return -1;
     }
-    strcpy(mPsk, argv[1]); // PSK is used here for DTLS handshake
+    strcpy(psk, argv[1]); // PSK is used here for DTLS handshake
     int ret, len;
     mbedtls_net_context listen_fd, client_fd;
     unsigned char buf[1024];
@@ -201,7 +201,7 @@ int main(int argc, char* argv[])
 #endif
 
     mbedtls_ssl_conf_ciphersuites(&conf, mCipherSuites);
-    mbedtls_ssl_conf_psk(&conf, (const unsigned char*)mPsk, strlen(mPsk),
+    mbedtls_ssl_conf_psk(&conf, (const unsigned char*)psk, strlen(psk),
         (const unsigned char*)"keyid", 5);
 
     if( ( ret = mbedtls_ssl_cookie_setup( &cookie_ctx,

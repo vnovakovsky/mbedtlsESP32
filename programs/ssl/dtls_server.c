@@ -103,6 +103,15 @@ static void my_debug( void *ctx, int level,
 
 int main( void )
 {
+    int     mCipherSuites[2];
+    mCipherSuites[0] = MBEDTLS_TLS_ECJPAKE_WITH_AES_128_CCM_8;
+    mCipherSuites[1] = 0;
+    // kPskc is stored persistently in router
+    const char *kPskc = "IAMCOMMISSIONER";
+    enum PskLength { kPskMaxLength = 32 };
+    uint8_t jpsk[kPskMaxLength] = "";
+    strcpy(jpsk, kPskc);
+    uint8_t jpsk_length = strlen(jpsk);
     int ret, len;
     mbedtls_net_context listen_fd, client_fd;
     unsigned char buf[1024];
@@ -110,7 +119,6 @@ int main( void )
     unsigned char client_ip[16] = { 0 };
     size_t cliip_len;
     mbedtls_ssl_cookie_ctx cookie_ctx;
-
     mbedtls_entropy_context entropy;
     mbedtls_ctr_drbg_context ctr_drbg;
     mbedtls_ssl_context ssl;
@@ -119,14 +127,7 @@ int main( void )
 #if defined(MBEDTLS_SSL_CACHE_C)
     mbedtls_ssl_cache_context cache;
 #endif
-    int     mCipherSuites[2];
-    mCipherSuites[0] = MBEDTLS_TLS_ECJPAKE_WITH_AES_128_CCM_8;
-    mCipherSuites[1] = 0;
-    // kPskc is stored persistently in router
-    #define kPskc "IAMCOMMISSIONER"
-    enum PskLength { kPskMaxLength = 32 };
-    uint8_t jpsk[kPskMaxLength] = kPskc;
-    uint8_t jpsk_length = strlen(jpsk);
+    
 
     mbedtls_net_init( &listen_fd );
     mbedtls_net_init( &client_fd );
