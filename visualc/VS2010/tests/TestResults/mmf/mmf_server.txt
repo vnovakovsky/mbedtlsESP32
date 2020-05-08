@@ -1,0 +1,150 @@
+
+I:\projects\openthread\mbedtls\github\mbedtls\visualc\VS2010\Debug>dtls_mmf_server.exe 00112233445566778899aabbccddeeff
+  . Bind on udp/*/4433 ... ok
+  . Seeding the random number generator... ok
+  . Setting up the DTLS data...I:\projects\openthread\mbedtls\github\mbedtls\library\ssl_msg.c:0076: set_timer to 0 ms
+ ok
+I:\projects\openthread\mbedtls\github\mbedtls\library\ssl_msg.c:0076: set_timer to 0 ms
+I:\projects\openthread\mbedtls\github\mbedtls\library\ssl_msg.c:0076: set_timer to 0 ms
+  . Waiting for a remote connection ...
+ ok
+  . Performing the DTLS handshake...view of file mapped.I:\projects\openthread\mbedtls\github\mbedtls\library\ssl_tls.c:5670: => handshake
+I:\projects\openthread\mbedtls\github\mbedtls\library\ssl_srv.c:4458: server state: 0
+I:\projects\openthread\mbedtls\github\mbedtls\library\ssl_msg.c:1925: => flush output
+I:\projects\openthread\mbedtls\github\mbedtls\library\ssl_msg.c:1937: <= flush output
+I:\projects\openthread\mbedtls\github\mbedtls\library\ssl_srv.c:4458: server state: 1
+I:\projects\openthread\mbedtls\github\mbedtls\library\ssl_msg.c:1925: => flush output
+I:\projects\openthread\mbedtls\github\mbedtls\library\ssl_msg.c:1937: <= flush output
+I:\projects\openthread\mbedtls\github\mbedtls\library\ssl_srv.c:1325: => parse client hello
+I:\projects\openthread\mbedtls\github\mbedtls\library\ssl_msg.c:1705: => fetch input
+I:\projects\openthread\mbedtls\github\mbedtls\library\ssl_msg.c:1766: in_left: 0, nb_want: 5
+I:\projects\openthread\mbedtls\github\mbedtls\library\ssl_msg.c:1807: f_recv_timeout: 0 ms
+
+I:\projects\openthread\mbedtls\github\mbedtls\library\ssl_msg.c:1815: ssl->f_recv(_timeout)() returned 495 (-0xfffffe11)
+I:\projects\openthread\mbedtls\github\mbedtls\library\ssl_msg.c:1912: <= fetch input
+I:\projects\openthread\mbedtls\github\mbedtls\library\ssl_srv.c:1357: dumping 'record header' (13 bytes)
+I:\projects\openthread\mbedtls\github\mbedtls\library\ssl_srv.c:1357: 0000:  16 fe ff 00 00 00 00 00 00 00 00 01 e2           .............
+I:\projects\openthread\mbedtls\github\mbedtls\library\ssl_srv.c:1369: client hello v3, message type: 22
+I:\projects\openthread\mbedtls\github\mbedtls\library\ssl_srv.c:1378: client hello v3, message len.: 482
+I:\projects\openthread\mbedtls\github\mbedtls\library\ssl_srv.c:1381: client hello v3, protocol version: [254:255]
+I:\projects\openthread\mbedtls\github\mbedtls\library\ssl_msg.c:1705: => fetch input
+I:\projects\openthread\mbedtls\github\mbedtls\library\ssl_msg.c:1766: in_left: 495, nb_want: 495
+I:\projects\openthread\mbedtls\github\mbedtls\library\ssl_msg.c:1773: <= fetch input
+I:\projects\openthread\mbedtls\github\mbedtls\library\ssl_srv.c:1463: dumping 'record contents' (482 bytes)
+I:\projects\openthread\mbedtls\github\mbedtls\library\ssl_srv.c:1463: 0000:  01 00 01 d6 00 00 00 00 00 00 01 d6 fe fd 5e b4  ..............^.
+I:\projects\openthread\mbedtls\github\mbedtls\library\ssl_srv.c:1463: 0010:  b4 77 1d 13 b8 ee 9d cd 7b fd 38 08 13 aa 40 5b  .w......{.8...@[
+I:\projects\openthread\mbedtls\github\mbedtls\library\ssl_srv.c:1463: 0020:  72 2a ca 6f 8c 48 da bf e9 a2 8d 29 a3 7b 00 00  r*.o.H.....).{..
+I:\projects\openthread\mbedtls\github\mbedtls\library\ssl_srv.c:1463: 0030:  00 04 c0 ff 00 ff 01 00 01 a8 00 00 00 0e 00 0c  ................
+I:\projects\openthread\mbedtls\github\mbedtls\library\ssl_srv.c:1463: 0040:  00 00 09 6c 6f 63 61 6c 68 6f 73 74 00 0d 00 16  ...localhost....
+I:\projects\openthread\mbedtls\github\mbedtls\library\ssl_srv.c:1463: 0050:  00 14 06 03 06 01 05 03 05 01 04 03 04 01 03 03  ................
+I:\projects\openthread\mbedtls\github\mbedtls\library\ssl_srv.c:1463: 0060:  03 01 02 03 02 01 00 0a 00 18 00 16 00 19 00 1c  ................
+I:\projects\openthread\mbedtls\github\mbedtls\library\ssl_srv.c:1463: 0070:  00 18 00 1b 00 17 00 16 00 1a 00 15 00 14 00 13  ................
+I:\projects\openthread\mbedtls\github\mbedtls\library\ssl_srv.c:1463: 0080:  00 12 00 0b 00 02 01 00 01 00 01 4a 41 04 b6 40  ...........JA..@
+I:\projects\openthread\mbedtls\github\mbedtls\library\ssl_srv.c:1463: 0090:  50 cc d7 88 3b fb 07 e5 78 de f0 d8 6c 58 a0 e8  P...;...x...lX..
+I:\projects\openthread\mbedtls\github\mbedtls\library\ssl_srv.c:1463: 00a0:  c2 09 40 bc 8b 6d b1 2a 56 3e f3 4d 97 56 76 7a  ..@..m.*V>.M.Vvz
+I:\projects\openthread\mbedtls\github\mbedtls\library\ssl_srv.c:1463: 00b0:  e3 80 5f e0 ff 7d ee 9f 6d f0 26 f9 cb b4 a4 32  .._..}..m.&....2
+I:\projects\openthread\mbedtls\github\mbedtls\library\ssl_srv.c:1463: 00c0:  3c c6 88 d8 2d 67 ad d4 d3 58 18 e3 49 e5 41 04  <...-g...X..I.A.
+I:\projects\openthread\mbedtls\github\mbedtls\library\ssl_srv.c:1463: 00d0:  75 0a 35 f2 67 b0 0a 84 76 72 73 07 55 80 d1 1a  u.5.g...vrs.U...
+I:\projects\openthread\mbedtls\github\mbedtls\library\ssl_srv.c:1463: 00e0:  36 ed 15 d4 ff 21 a6 e3 fe 88 1c 52 9b be 55 5c  6....!.....R..U\
+I:\projects\openthread\mbedtls\github\mbedtls\library\ssl_srv.c:1463: 00f0:  04 4f a2 b9 cb a8 93 90 a8 23 8b 13 83 33 cd 8b  .O.......#...3..
+I:\projects\openthread\mbedtls\github\mbedtls\library\ssl_srv.c:1463: 0100:  de 1f 51 df 67 a5 7a 48 83 90 f7 69 d4 b5 7d e0  ..Q.g.zH...i..}.
+I:\projects\openthread\mbedtls\github\mbedtls\library\ssl_srv.c:1463: 0110:  20 e3 aa ed 49 74 22 ea 95 ea 5a 94 46 db 90 5d   ...It"...Z.F..]
+I:\projects\openthread\mbedtls\github\mbedtls\library\ssl_srv.c:1463: 0120:  f4 59 f5 cb 4f c9 23 87 d1 22 15 0c 18 9b 75 bd  .Y..O.#.."....u.
+I:\projects\openthread\mbedtls\github\mbedtls\library\ssl_srv.c:1463: 0130:  4e 41 04 77 63 6e 4a 89 2c 65 b2 6e b6 76 2e a7  NA.wcnJ.,e.n.v..
+I:\projects\openthread\mbedtls\github\mbedtls\library\ssl_srv.c:1463: 0140:  83 c8 65 e0 cc d1 b4 78 ba b8 94 b8 f8 f0 c6 a6  ..e....x........
+I:\projects\openthread\mbedtls\github\mbedtls\library\ssl_srv.c:1463: 0150:  90 aa 14 3b 46 9a 28 9f 0c d6 47 21 6a c9 45 7f  ...;F.(...G!j.E.
+I:\projects\openthread\mbedtls\github\mbedtls\library\ssl_srv.c:1463: 0160:  dc 76 c5 0d ef a8 fc c8 ce 87 f5 e3 e6 c6 a1 88  .v..............
+I:\projects\openthread\mbedtls\github\mbedtls\library\ssl_srv.c:1463: 0170:  96 b2 46 41 04 25 c5 ff ea de f6 02 bc 39 a6 6d  ..FA.%.......9.m
+I:\projects\openthread\mbedtls\github\mbedtls\library\ssl_srv.c:1463: 0180:  8b 55 ed f8 02 c1 9e 66 aa 32 66 8b 49 ea 70 65  .U.....f.2f.I.pe
+I:\projects\openthread\mbedtls\github\mbedtls\library\ssl_srv.c:1463: 0190:  63 3a f0 e0 08 a6 f9 7c 48 dc ef 1a 91 a7 34 c7  c:.....|H.....4.
+I:\projects\openthread\mbedtls\github\mbedtls\library\ssl_srv.c:1463: 01a0:  6d 14 e0 9d 57 a6 56 29 64 02 ac 04 65 85 fc cc  m...W.V)d...e...
+I:\projects\openthread\mbedtls\github\mbedtls\library\ssl_srv.c:1463: 01b0:  1c 5e 1b e7 36 20 cd 03 ce 5e f2 72 3d 1f a5 15  .^..6 ...^.r=...
+I:\projects\openthread\mbedtls\github\mbedtls\library\ssl_srv.c:1463: 01c0:  6c 89 65 76 9b ba d7 d1 ef 9d d2 ab a5 71 5e c6  l.ev.........q^.
+I:\projects\openthread\mbedtls\github\mbedtls\library\ssl_srv.c:1463: 01d0:  24 ca 9e 51 27 f3 00 16 00 00 00 17 00 00 00 23  $..Q'..........#
+I:\projects\openthread\mbedtls\github\mbedtls\library\ssl_srv.c:1463: 01e0:  00 00                                            ..
+I:\projects\openthread\mbedtls\github\mbedtls\library\ssl_srv.c:1481: client hello v3, handshake type: 1
+I:\projects\openthread\mbedtls\github\mbedtls\library\ssl_srv.c:1490: client hello v3, handshake len.: 470
+I:\projects\openthread\mbedtls\github\mbedtls\library\ssl_srv.c:1579: dumping 'client hello, version' (2 bytes)
+I:\projects\openthread\mbedtls\github\mbedtls\library\ssl_srv.c:1579: 0000:  fe fd                                            ..
+I:\projects\openthread\mbedtls\github\mbedtls\library\ssl_srv.c:1610: dumping 'client hello, random bytes' (32 bytes)
+I:\projects\openthread\mbedtls\github\mbedtls\library\ssl_srv.c:1610: 0000:  5e b4 b4 77 1d 13 b8 ee 9d cd 7b fd 38 08 13 aa  ^..w......{.8...
+I:\projects\openthread\mbedtls\github\mbedtls\library\ssl_srv.c:1610: 0010:  40 5b 72 2a ca 6f 8c 48 da bf e9 a2 8d 29 a3 7b  @[r*.o.H.....).{
+I:\projects\openthread\mbedtls\github\mbedtls\library\ssl_srv.c:1628: dumping 'client hello, session id' (0 bytes)
+I:\projects\openthread\mbedtls\github\mbedtls\library\ssl_srv.c:1654: dumping 'client hello, cookie' (0 bytes)
+I:\projects\openthread\mbedtls\github\mbedtls\library\ssl_srv.c:1667: cookie verification failed
+I:\projects\openthread\mbedtls\github\mbedtls\library\ssl_srv.c:1713: dumping 'client hello, ciphersuitelist' (4 bytes)
+I:\projects\openthread\mbedtls\github\mbedtls\library\ssl_srv.c:1713: 0000:  c0 ff 00 ff                                      ....
+I:\projects\openthread\mbedtls\github\mbedtls\library\ssl_srv.c:1733: dumping 'client hello, compression' (1 bytes)
+I:\projects\openthread\mbedtls\github\mbedtls\library\ssl_srv.c:1733: 0000:  00                                               .
+I:\projects\openthread\mbedtls\github\mbedtls\library\ssl_srv.c:1788: dumping 'client hello extensions' (424 bytes)
+I:\projects\openthread\mbedtls\github\mbedtls\library\ssl_srv.c:1788: 0000:  00 00 00 0e 00 0c 00 00 09 6c 6f 63 61 6c 68 6f  .........localho
+I:\projects\openthread\mbedtls\github\mbedtls\library\ssl_srv.c:1788: 0010:  73 74 00 0d 00 16 00 14 06 03 06 01 05 03 05 01  st..............
+I:\projects\openthread\mbedtls\github\mbedtls\library\ssl_srv.c:1788: 0020:  04 03 04 01 03 03 03 01 02 03 02 01 00 0a 00 18  ................
+I:\projects\openthread\mbedtls\github\mbedtls\library\ssl_srv.c:1788: 0030:  00 16 00 19 00 1c 00 18 00 1b 00 17 00 16 00 1a  ................
+I:\projects\openthread\mbedtls\github\mbedtls\library\ssl_srv.c:1788: 0040:  00 15 00 14 00 13 00 12 00 0b 00 02 01 00 01 00  ................
+I:\projects\openthread\mbedtls\github\mbedtls\library\ssl_srv.c:1788: 0050:  01 4a 41 04 b6 40 50 cc d7 88 3b fb 07 e5 78 de  .JA..@P...;...x.
+I:\projects\openthread\mbedtls\github\mbedtls\library\ssl_srv.c:1788: 0060:  f0 d8 6c 58 a0 e8 c2 09 40 bc 8b 6d b1 2a 56 3e  ..lX....@..m.*V>
+I:\projects\openthread\mbedtls\github\mbedtls\library\ssl_srv.c:1788: 0070:  f3 4d 97 56 76 7a e3 80 5f e0 ff 7d ee 9f 6d f0  .M.Vvz.._..}..m.
+I:\projects\openthread\mbedtls\github\mbedtls\library\ssl_srv.c:1788: 0080:  26 f9 cb b4 a4 32 3c c6 88 d8 2d 67 ad d4 d3 58  &....2<...-g...X
+I:\projects\openthread\mbedtls\github\mbedtls\library\ssl_srv.c:1788: 0090:  18 e3 49 e5 41 04 75 0a 35 f2 67 b0 0a 84 76 72  ..I.A.u.5.g...vr
+I:\projects\openthread\mbedtls\github\mbedtls\library\ssl_srv.c:1788: 00a0:  73 07 55 80 d1 1a 36 ed 15 d4 ff 21 a6 e3 fe 88  s.U...6....!....
+I:\projects\openthread\mbedtls\github\mbedtls\library\ssl_srv.c:1788: 00b0:  1c 52 9b be 55 5c 04 4f a2 b9 cb a8 93 90 a8 23  .R..U\.O.......#
+I:\projects\openthread\mbedtls\github\mbedtls\library\ssl_srv.c:1788: 00c0:  8b 13 83 33 cd 8b de 1f 51 df 67 a5 7a 48 83 90  ...3....Q.g.zH..
+I:\projects\openthread\mbedtls\github\mbedtls\library\ssl_srv.c:1788: 00d0:  f7 69 d4 b5 7d e0 20 e3 aa ed 49 74 22 ea 95 ea  .i..}. ...It"...
+I:\projects\openthread\mbedtls\github\mbedtls\library\ssl_srv.c:1788: 00e0:  5a 94 46 db 90 5d f4 59 f5 cb 4f c9 23 87 d1 22  Z.F..].Y..O.#.."
+I:\projects\openthread\mbedtls\github\mbedtls\library\ssl_srv.c:1788: 00f0:  15 0c 18 9b 75 bd 4e 41 04 77 63 6e 4a 89 2c 65  ....u.NA.wcnJ.,e
+I:\projects\openthread\mbedtls\github\mbedtls\library\ssl_srv.c:1788: 0100:  b2 6e b6 76 2e a7 83 c8 65 e0 cc d1 b4 78 ba b8  .n.v....e....x..
+I:\projects\openthread\mbedtls\github\mbedtls\library\ssl_srv.c:1788: 0110:  94 b8 f8 f0 c6 a6 90 aa 14 3b 46 9a 28 9f 0c d6  .........;F.(...
+I:\projects\openthread\mbedtls\github\mbedtls\library\ssl_srv.c:1788: 0120:  47 21 6a c9 45 7f dc 76 c5 0d ef a8 fc c8 ce 87  G!j.E..v........
+I:\projects\openthread\mbedtls\github\mbedtls\library\ssl_srv.c:1788: 0130:  f5 e3 e6 c6 a1 88 96 b2 46 41 04 25 c5 ff ea de  ........FA.%....
+I:\projects\openthread\mbedtls\github\mbedtls\library\ssl_srv.c:1788: 0140:  f6 02 bc 39 a6 6d 8b 55 ed f8 02 c1 9e 66 aa 32  ...9.m.U.....f.2
+I:\projects\openthread\mbedtls\github\mbedtls\library\ssl_srv.c:1788: 0150:  66 8b 49 ea 70 65 63 3a f0 e0 08 a6 f9 7c 48 dc  f.I.pec:.....|H.
+I:\projects\openthread\mbedtls\github\mbedtls\library\ssl_srv.c:1788: 0160:  ef 1a 91 a7 34 c7 6d 14 e0 9d 57 a6 56 29 64 02  ....4.m...W.V)d.
+I:\projects\openthread\mbedtls\github\mbedtls\library\ssl_srv.c:1788: 0170:  ac 04 65 85 fc cc 1c 5e 1b e7 36 20 cd 03 ce 5e  ..e....^..6 ...^
+I:\projects\openthread\mbedtls\github\mbedtls\library\ssl_srv.c:1788: 0180:  f2 72 3d 1f a5 15 6c 89 65 76 9b ba d7 d1 ef 9d  .r=...l.ev......
+I:\projects\openthread\mbedtls\github\mbedtls\library\ssl_srv.c:1788: 0190:  d2 ab a5 71 5e c6 24 ca 9e 51 27 f3 00 16 00 00  ...q^.$..Q'.....
+I:\projects\openthread\mbedtls\github\mbedtls\library\ssl_srv.c:1788: 01a0:  00 17 00 00 00 23 00 00                          .....#..
+I:\projects\openthread\mbedtls\github\mbedtls\library\ssl_srv.c:1814: found ServerName extension
+I:\projects\openthread\mbedtls\github\mbedtls\library\ssl_srv.c:1838: found signature_algorithms extension
+I:\projects\openthread\mbedtls\github\mbedtls\library\ssl_srv.c:0308: client hello v3, signature_algorithm ext: match sig 4 and hash 8
+I:\projects\openthread\mbedtls\github\mbedtls\library\ssl_srv.c:0308: client hello v3, signature_algorithm ext: match sig 1 and hash 8
+I:\projects\openthread\mbedtls\github\mbedtls\library\ssl_srv.c:0308: client hello v3, signature_algorithm ext: match sig 4 and hash 7
+I:\projects\openthread\mbedtls\github\mbedtls\library\ssl_srv.c:0308: client hello v3, signature_algorithm ext: match sig 1 and hash 7
+I:\projects\openthread\mbedtls\github\mbedtls\library\ssl_srv.c:0308: client hello v3, signature_algorithm ext: match sig 4 and hash 6
+I:\projects\openthread\mbedtls\github\mbedtls\library\ssl_srv.c:0308: client hello v3, signature_algorithm ext: match sig 1 and hash 6
+I:\projects\openthread\mbedtls\github\mbedtls\library\ssl_srv.c:0308: client hello v3, signature_algorithm ext: match sig 4 and hash 5
+I:\projects\openthread\mbedtls\github\mbedtls\library\ssl_srv.c:0308: client hello v3, signature_algorithm ext: match sig 1 and hash 5
+I:\projects\openthread\mbedtls\github\mbedtls\library\ssl_srv.c:0308: client hello v3, signature_algorithm ext: match sig 4 and hash 4
+I:\projects\openthread\mbedtls\github\mbedtls\library\ssl_srv.c:0308: client hello v3, signature_algorithm ext: match sig 1 and hash 4
+I:\projects\openthread\mbedtls\github\mbedtls\library\ssl_srv.c:1852: found supported elliptic curves extension
+I:\projects\openthread\mbedtls\github\mbedtls\library\ssl_srv.c:1860: found supported point formats extension
+I:\projects\openthread\mbedtls\github\mbedtls\library\ssl_srv.c:0418: point format selected: 0
+I:\projects\openthread\mbedtls\github\mbedtls\library\ssl_srv.c:1872: found ecjpake kkpp extension
+I:\projects\openthread\mbedtls\github\mbedtls\library\ssl_srv.c:1912: found encrypt then mac extension
+I:\projects\openthread\mbedtls\github\mbedtls\library\ssl_srv.c:1922: found extended master secret extension
+I:\projects\openthread\mbedtls\github\mbedtls\library\ssl_srv.c:1932: found session ticket extension
+I:\projects\openthread\mbedtls\github\mbedtls\library\ssl_srv.c:2020: received TLS_EMPTY_RENEGOTIATION_INFO
+I:\projects\openthread\mbedtls\github\mbedtls\library\ssl_srv.c:0936: trying ciphersuite: TLS-ECJPAKE-WITH-AES-128-CCM-8
+I:\projects\openthread\mbedtls\github\mbedtls\library\ssl_srv.c:2123: selected ciphersuite: TLS-ECJPAKE-WITH-AES-128-CCM-8
+I:\projects\openthread\mbedtls\github\mbedtls\library\ssl_msg.c:0076: set_timer to 0 ms
+I:\projects\openthread\mbedtls\github\mbedtls\library\ssl_srv.c:2152: no hash algorithm for signature algorithm 0 - should not happen
+I:\projects\openthread\mbedtls\github\mbedtls\library\ssl_srv.c:2157: <= parse client hello
+I:\projects\openthread\mbedtls\github\mbedtls\library\ssl_srv.c:4458: server state: 2
+I:\projects\openthread\mbedtls\github\mbedtls\library\ssl_msg.c:1925: => flush output
+I:\projects\openthread\mbedtls\github\mbedtls\library\ssl_msg.c:1937: <= flush output
+I:\projects\openthread\mbedtls\github\mbedtls\library\ssl_srv.c:2589: => write server hello
+I:\projects\openthread\mbedtls\github\mbedtls\library\ssl_srv.c:2595: client hello was not authenticated
+I:\projects\openthread\mbedtls\github\mbedtls\library\ssl_srv.c:2596: <= write server hello
+I:\projects\openthread\mbedtls\github\mbedtls\library\ssl_srv.c:2515: => write hello verify request
+I:\projects\openthread\mbedtls\github\mbedtls\library\ssl_srv.c:2528: dumping 'server version' (2 bytes)
+I:\projects\openthread\mbedtls\github\mbedtls\library\ssl_srv.c:2528: 0000:  fe fd                                            ..
+I:\projects\openthread\mbedtls\github\mbedtls\library\ssl_srv.c:2545: f_cookie_write() returned -28928 (-0x7100)
+I:\projects\openthread\mbedtls\github\mbedtls\library\ssl_tls.c:5680: <= handshake
+ failed
+  ! mbedtls_ssl_handshake returned -0x7100
+
+Last error was: -28928 - SSL - Bad input parameters to function
+
+I:\projects\openthread\mbedtls\github\mbedtls\library\ssl_msg.c:0076: set_timer to 0 ms
+I:\projects\openthread\mbedtls\github\mbedtls\library\ssl_msg.c:0076: set_timer to 0 ms
+  . Waiting for a remote connection ...

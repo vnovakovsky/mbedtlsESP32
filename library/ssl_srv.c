@@ -2543,6 +2543,7 @@ static int ssl_write_hello_verify_request( mbedtls_ssl_context *ssl )
                                      ssl->cli_id, ssl->cli_id_len ) ) != 0 )
     {
         MBEDTLS_SSL_DEBUG_RET( 1, "f_cookie_write", ret );
+        MBEDTLS_SSL_DEBUG_BUF(3, "ssl->out_buf + MBEDTLS_SSL_OUT_BUFFER_LEN", ssl->out_buf + MBEDTLS_SSL_OUT_BUFFER_LEN, 32);
         return( ret );
     }
 
