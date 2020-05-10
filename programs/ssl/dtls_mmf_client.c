@@ -146,6 +146,7 @@ int main( int argc, char *argv[] )
     /*
      * 0. Initialize the RNG and the session data
      */
+    create_event(PointOfView_Client);
     HANDLE hFileMap = create_mmf();
     PVOID pView = map_mmf(hFileMap);
 

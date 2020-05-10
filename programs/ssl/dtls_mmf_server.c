@@ -141,9 +141,10 @@ int main(int argc, char* argv[])
 #if defined(MBEDTLS_SSL_CACHE_C)
     mbedtls_ssl_cache_context cache;
 #endif
-    
+    create_event(PointOfView_Server);
     HANDLE hFileMap = create_mmf();
-    PVOID pView = NULL;
+    
+    PVOID pView = map_mmf(hFileMap);
 
     mbedtls_net_init( &listen_fd );
     mbedtls_net_init( &client_fd );
@@ -241,7 +242,6 @@ int main(int argc, char* argv[])
     printf( " ok\n" );
 
 reset:
-    unmap_mmf(pView);
 #ifdef MBEDTLS_ERROR_C
     if( ret != 0 )
     {
@@ -268,7 +268,12 @@ reset:
         printf( " failed\n  ! mbedtls_net_accept returned %d\n\n", ret );
         goto exit;
     }
+#endif // 0
 
+    getchar(); // simulates blocking call( accept )
+
+    cliip_len = 1;
+    client_ip[0] = 1; // dummy value for shared memory implementation - varified for NULL inside library
     /* For HelloVerifyRequest cookies */
     if( ( ret = mbedtls_ssl_set_client_transport_id( &ssl,
                     client_ip, cliip_len ) ) != 0 )
@@ -277,9 +282,6 @@ reset:
                 "mbedtls_ssl_set_client_transport_id() returned -0x%x\n\n", (unsigned int) -ret );
         goto exit;
     }
-#endif // 0
-
-    getchar();
 
     mbedtls_ssl_set_bio( &ssl, &client_fd,
                          mbedtls_net_send_mmf, mbedtls_net_recv_mmf, mbedtls_net_recv_timeout_mmf);
@@ -291,7 +293,6 @@ reset:
      */
     printf( "  . Performing the DTLS handshake..." );
     fflush( stdout );
-    pView = map_mmf(hFileMap);
     do ret = mbedtls_ssl_handshake( &ssl );
     while( ret == MBEDTLS_ERR_SSL_WANT_READ ||
            ret == MBEDTLS_ERR_SSL_WANT_WRITE );
@@ -317,16 +318,12 @@ reset:
     printf( "  < Read from client:" );
     fflush( stdout );
 
-    //pView = map_mmf(hFileMap);
-
     len = sizeof( buf ) - 1;
     memset( buf, 0, sizeof( buf ) );
 
     do ret = mbedtls_ssl_read( &ssl, buf, len );
     while( ret == MBEDTLS_ERR_SSL_WANT_READ ||
            ret == MBEDTLS_ERR_SSL_WANT_WRITE );
-
-    //unmap_mmf(pView);
 
     if( ret <= 0 )
     {
@@ -410,7 +407,7 @@ close_notify:
      * Final clean-ups and exit
      */
 exit:
-
+    unmap_mmf(pView);
     close_mmf(hFileMap);
 
 #ifdef MBEDTLS_ERROR_C

@@ -3,7 +3,14 @@
 #include "mmf_communication.h"
 #include <windows.h>
 
+#include <stdio.h>
+
 static PVOID gpView = NULL;
+
+HANDLE ghSignalAboutEvent = NULL;
+HANDLE ghWaitForEvent = NULL;
+
+void hexDump(char* desc, void* addr, int len);
 
 /*
 * Read at most 'len' characters
@@ -16,9 +23,7 @@ int mbedtls_net_recv_mmf(void* ctx, unsigned char* buf, size_t len)
     /*if (fd < 0)
         return(MBEDTLS_ERR_NET_INVALID_CONTEXT);
     */
-    //PVOID pView = create_mmf();
     ret = (int)read_mmf(gpView, buf);
-    //unmap_mmf(pView);
 #if 0
     if (ret < 0)
     {
@@ -49,7 +54,6 @@ int mbedtls_net_recv_mmf(void* ctx, unsigned char* buf, size_t len)
 int mbedtls_net_recv_timeout_mmf(void* ctx, unsigned char* buf,
     size_t len, uint32_t timeout)
 {
-    getchar();
     int ret = MBEDTLS_ERR_ERROR_CORRUPTION_DETECTED;
     struct timeval tv;
     fd_set read_fds;
@@ -97,7 +101,7 @@ int mbedtls_net_recv_timeout_mmf(void* ctx, unsigned char* buf,
  */
 int mbedtls_net_send_mmf(void* ctx, const unsigned char* buf, size_t len)
 {
-    getchar();
+    //getchar();
     int ret = MBEDTLS_ERR_ERROR_CORRUPTION_DETECTED;
     int fd = ((mbedtls_net_context*)ctx)->fd;
 
@@ -105,11 +109,8 @@ int mbedtls_net_send_mmf(void* ctx, const unsigned char* buf, size_t len)
         return(MBEDTLS_ERR_NET_INVALID_CONTEXT);*/
 
     //ret = (int)write(fd, buf, len);
-
-    //PVOID pView = create_mmf();
     write_mmf(gpView, buf, len);
-    //unmap_mmf(pView);
-    //int left = 0;
+    
     return len;
 #if 0
     if (ret < 0)
@@ -135,13 +136,93 @@ int mbedtls_net_send_mmf(void* ctx, const unsigned char* buf, size_t len)
     //return(ret);
 }
 
-// Handle of the open memory-mapped file
-//static HANDLE s_hFileMap = NULL;
+
+static const char * kWrittenByServerEvent = "WrittenByServerEvent";
+static const char * kWrittenByClientEvent = "WrittenByClientEvent";
+
+void create_event(enum PointOfView pointOfView)
+{
+    if (ghSignalAboutEvent == NULL)
+    {
+        if (pointOfView == PointOfView_Server)
+        {
+            ghSignalAboutEvent = CreateEventA(
+                NULL,               // default security attributes
+                FALSE,              // manual-reset event
+                FALSE,              // initial state is nonsignaled
+                kWrittenByServerEvent  // object name
+            );
+            if (ghSignalAboutEvent == NULL)
+            {
+                printf("WrittenByServerEvent CreateEvent failed (%d)\n", GetLastError());
+                return;
+            }
+        }
+        else if (pointOfView == PointOfView_Client)
+        {
+            ghSignalAboutEvent = CreateEventA(
+                NULL,               // default security attributes
+                FALSE,               // manual-reset event
+                FALSE,              // initial state is nonsignaled
+                kWrittenByClientEvent  // object name
+            );
+            if (ghSignalAboutEvent == NULL)
+            {
+                printf("WrittenByClientEvent CreateEvent failed (%d)\n", GetLastError());
+                return;
+            }
+        }
+        else
+        {
+            printf("unexpected point of view (%d)\n", pointOfView);
+            return;
+        }
+    }
+    
+    ///////////////////////
+
+    if (ghWaitForEvent == NULL)
+    {
+        if (pointOfView == PointOfView_Server)
+        {
+            ghWaitForEvent = CreateEventA(
+                NULL,               // default security attributes
+                FALSE,               // manual-reset event
+                FALSE,              // initial state is nonsignaled
+                kWrittenByClientEvent  // object name
+            );
+            if (ghWaitForEvent == NULL)
+            {
+                printf("WrittenByClientEvent CreateEvent failed (%d)\n", GetLastError());
+                return;
+            }
+        }
+        else if (pointOfView == PointOfView_Client)
+        {
+            ghWaitForEvent = CreateEventA(
+                NULL,               // default security attributes
+                FALSE,               // manual-reset event
+                FALSE,              // initial state is nonsignaled
+                kWrittenByServerEvent  // object name
+            );
+            if (ghWaitForEvent == NULL)
+            {
+                printf("WrittenByServerEvent CreateEvent failed (%d)\n", GetLastError());
+                return;
+            }
+        }
+        else
+        {
+            printf("unexpected point of view (%d)\n", pointOfView);
+            return;
+        }
+    }
+}
 
 HANDLE create_mmf()
 {
     HANDLE hFileMap = CreateFileMapping(INVALID_HANDLE_VALUE, NULL,
-        PAGE_READWRITE, 0, 4 * 1024, TEXT("MMFSharedData"));
+        PAGE_READWRITE, 0, 100 * 1024, TEXT("MMFSharedData"));
 
     if (hFileMap != NULL) {
 
@@ -158,21 +239,6 @@ HANDLE create_mmf()
 
         // File mapping created successfully.
         return hFileMap;
-        
-        /*PVOID pView = MapViewOfFile(s_hFileMap,
-            FILE_MAP_READ | FILE_MAP_WRITE, 0, 0, 0);
-
-        if (pView != NULL) {
-            printf("view of file mapped.");
-
-            return pView;*/
-
-            // Put edit text into the MMF.
-            /*Edit_GetText(GetDlgItem(hwnd, IDC_DATA),
-                (PTSTR)pView, 4 * 1024);
-        else {
-            printf("Can't map view of file.");
-        }*/
     }
     else {
         printf("Can't create file mapping.");
@@ -195,33 +261,120 @@ PVOID map_mmf(HANDLE hFileMap)
     return gpView;
 }
 
+
 void unmap_mmf(PVOID pView)
 {
     if (gpView)
     {
-        // Protect the MMF storage by unmapping it.
         UnmapViewOfFile(gpView);
     }
 }
+
 
 void write_mmf(PVOID pView, void* buf, int nbytes)
 {
     unsigned int* ptr = (unsigned int*)pView;
     *ptr = nbytes;
-    pView = ptr + 1;
-    memcpy(pView, buf, nbytes);
+    ptr++;
+    memcpy(ptr, buf, nbytes);
+    hexDump("write_mmf: pView", pView, nbytes + sizeof(unsigned int));
+    hexDump("write_mmf: buf", ptr, nbytes);
+    if (!SetEvent(ghSignalAboutEvent))
+    {
+        printf("SetEvent failed (%d)\n", GetLastError());
+        return;
+    }
+    printf("!!!!!!!!!!! SetEvent ghSignalAboutEvent\n");
 }
 
 int read_mmf(PVOID pView, void* buf)
 {
-    unsigned int* ptr = (unsigned int*)pView;
-    unsigned int nbytes = *ptr;
-    pView = ptr + 1;
-    memcpy(buf, pView, nbytes);
-    return nbytes;
+    printf(">>>>> READ_mmf waiting on ghWaitForEvent...");
+
+    DWORD dwWaitResult = WaitForSingleObject(
+        ghWaitForEvent, // event handle
+        INFINITE);    // indefinite wait
+
+    switch (dwWaitResult)
+    {
+        // Event object was signaled
+
+    case WAIT_OBJECT_0:
+        //
+        // TODO: Read from the shared buffer
+        //
+        printf(">>>>> READ_mmf reading...\n");
+        //getchar();
+        
+        unsigned int* ptr = (unsigned int*)pView;
+        unsigned int nbytes = *ptr;
+        //pView = ptr + 1;
+        ptr++;
+        memcpy(buf, ptr, nbytes);
+        hexDump("read_mmf: pView", pView, nbytes + sizeof(unsigned int));
+        hexDump("read_mmf: buf", ptr, nbytes);
+        return nbytes;
+        break;
+
+        // An error occurred
+    default:
+        printf("Wait error (%d)\n", GetLastError());
+        return 0;
+    }
 }
+
 
 void close_mmf(HANDLE hFileMap)
 {
     CloseHandle(hFileMap);
+    CloseHandle(ghSignalAboutEvent);
+    CloseHandle(ghWaitForEvent);
+}
+
+
+void hexDump(char* desc, void* addr, int len)
+{
+    int i;
+    unsigned char buff[17];
+    unsigned char* pc = (unsigned char*)addr;
+
+    // Output description if given.
+    if (desc != NULL)
+        printf("%s:\n", desc);
+
+    // Process every byte in the data.
+    for (i = 0; i < len; i++) {
+        // Multiple of 16 means new line (with line offset).
+
+        if ((i % 16) == 0) {
+            // Just don't print ASCII for the zeroth line.
+            if (i != 0)
+                printf("  %s\n", buff);
+
+            // Output the offset.
+            printf("  %04x ", i);
+        }
+
+        // Now the hex code for the specific character.
+        printf(" %02x", pc[i]);
+
+        // And store a printable ASCII character for later.
+        if ((pc[i] < 0x20) || (pc[i] > 0x7e)) {
+            buff[i % 16] = '.';
+        }
+        else {
+            buff[i % 16] = pc[i];
+        }
+
+        buff[(i % 16) + 1] = '\0';
+    }
+
+    // Pad out last line if not exactly 16 characters.
+    while ((i % 16) != 0) {
+        printf("   ");
+        i++;
+    }
+
+    // And print the final ASCII bit.
+    printf("  %s\n", buff);
 }

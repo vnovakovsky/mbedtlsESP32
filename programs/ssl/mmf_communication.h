@@ -1,3 +1,10 @@
+enum PointOfView
+{
+    PointOfView_None,
+    PointOfView_Server,
+    PointOfView_Client,
+};
+
 /**
  * \brief          Read at most 'len' characters. If no error occurs,
  *                 the actual amount read is returned.
@@ -51,6 +58,8 @@ int mbedtls_net_recv_timeout_mmf(void* ctx, unsigned char* buf, size_t len,
 
 typedef void* HANDLE;
 typedef void* PVOID;
+
+void create_event(enum PointOfView pointOfView);
 
 HANDLE  create_mmf();
 PVOID   map_mmf     (HANDLE hFileMap);
