@@ -7,9 +7,9 @@
 
 static PVOID gpView = NULL;
 
-HANDLE ghConnectedEvent = NULL;
-HANDLE ghSignalAboutEvent = NULL;
-HANDLE ghWaitForEvent = NULL;
+static HANDLE ghConnectedEvent = NULL;
+static HANDLE ghSignalAboutEvent = NULL;
+static HANDLE ghWaitForEvent = NULL;
 
 void hexDump(char* desc, void* addr, int len);
 
@@ -142,7 +142,7 @@ static const char * kConnectedEvent = "ConnectedEvent";
 static const char * kWrittenByServerEvent = "WrittenByServerEvent";
 static const char * kWrittenByClientEvent = "WrittenByClientEvent";
 
-void create_event(enum PointOfView pointOfView)
+void create_event_mmf(enum PointOfView pointOfView)
 {
     ghConnectedEvent = CreateEventA(
         NULL,               // default security attributes

@@ -61,7 +61,10 @@ int main( void )
 #include "mbedtls/ctr_drbg.h"
 #include "mbedtls/error.h"
 #include "mbedtls/timing.h"
+
+#ifdef USE_SHARED_MEMORY
 #include "mmf_communication.h"
+#endif //USE_SHARED_MEMORY
 
 /* Uncomment out the following line to default to IPv4 and disable IPv6 */
 //#define FORCE_IPV4
@@ -146,10 +149,11 @@ int main( int argc, char *argv[] )
     /*
      * 0. Initialize the RNG and the session data
      */
-    create_event(PointOfView_Client);
+#ifdef USE_SHARED_MEMORY
+    create_event_mmf(PointOfView_Client);
     HANDLE hFileMap = create_mmf();
     PVOID pView = map_mmf(hFileMap);
-
+#endif // USE_SHARED_MEMORY
     mbedtls_net_init( &server_fd );
     mbedtls_ssl_init( &ssl );
     mbedtls_ssl_config_init( &conf );
@@ -174,17 +178,16 @@ int main( int argc, char *argv[] )
      */
     mbedtls_printf( "  . Connecting to udp/%s/%s...", SERVER_NAME, SERVER_PORT );
     fflush( stdout );
-#if 0
+#ifndef USE_SHARED_MEMORY
     if( ( ret = mbedtls_net_connect( &server_fd, SERVER_ADDR,
                                          SERVER_PORT, MBEDTLS_NET_PROTO_UDP ) ) != 0 )
     {
         mbedtls_printf( " failed\n  ! mbedtls_net_connect returned %d\n\n", ret );
         goto exit;
     }
-#endif // 0
-
+#else USE_SHARED_MEMORY
     connect_mmf();
-
+#endif // USE_SHARED_MEMORY
     mbedtls_printf( " ok\n" );
 
     /*
@@ -221,9 +224,13 @@ int main( int argc, char *argv[] )
         mbedtls_printf( " failed\n  ! mbedtls_ssl_set_hostname returned %d\n\n", ret );
         goto exit;
     }
-
+#ifdef USE_SHARED_MEMORY
     mbedtls_ssl_set_bio( &ssl, &server_fd,
                          mbedtls_net_send_mmf, mbedtls_net_recv_mmf, mbedtls_net_recv_timeout_mmf);
+#else
+    mbedtls_ssl_set_bio(&ssl, &server_fd,
+        mbedtls_net_send, mbedtls_net_recv, mbedtls_net_recv_timeout);
+#endif // USE_SHARED_MEMORY
 
     mbedtls_ssl_set_timer_cb( &ssl, &timer, mbedtls_timing_set_delay,
                                             mbedtls_timing_get_delay );
@@ -318,9 +325,9 @@ close_notify:
     do ret = mbedtls_ssl_close_notify( &ssl );
     while( ret == MBEDTLS_ERR_SSL_WANT_WRITE );
     ret = 0;
-
+#ifdef USE_SHARED_MEMORY
     close_connection_mmf();
-
+#endif // USE_SHARED_MEMORY
     mbedtls_printf( " done\n" );
 
     /*
@@ -336,10 +343,10 @@ exit:
         mbedtls_printf( "Last error was: %d - %s\n\n", ret, error_buf );
     }
 #endif
-    
+#ifdef USE_SHARED_MEMORY    
     unmap_mmf(pView);
     close_mmf(hFileMap);
-
+#endif // USE_SHARED_MEMORY
     mbedtls_net_free( &server_fd );
 
     mbedtls_ssl_free( &ssl );
