@@ -270,7 +270,7 @@ reset:
     }
 #endif // 0
 
-    getchar(); // simulates blocking call( accept )
+    accept_connection_mmf(); // simulates blocking call( accept )
 
     cliip_len = 1;
     client_ip[0] = 1; // dummy value for shared memory implementation - varified for NULL inside library
@@ -398,7 +398,7 @@ close_notify:
     do ret = mbedtls_ssl_close_notify( &ssl );
     while( ret == MBEDTLS_ERR_SSL_WANT_WRITE );
     ret = 0;
-
+    close_connection_mmf();
     printf( " done\n" );
 
     goto reset;

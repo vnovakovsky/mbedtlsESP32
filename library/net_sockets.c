@@ -150,7 +150,7 @@ int mbedtls_net_connect( mbedtls_net_context *ctx, const char *host,
 {
     int ret = MBEDTLS_ERR_ERROR_CORRUPTION_DETECTED;
     struct addrinfo hints, *addr_list, *cur;
-
+    return 0;
     if( ( ret = net_prepare() ) != 0 )
         return( ret );
 
@@ -197,7 +197,7 @@ int mbedtls_net_bind( mbedtls_net_context *ctx, const char *bind_ip, const char 
 {
     int n, ret;
     struct addrinfo hints, *addr_list, *cur;
-
+    return 0;
     if( ( ret = net_prepare() ) != 0 )
         return( ret );
 
@@ -316,7 +316,7 @@ int mbedtls_net_accept( mbedtls_net_context *bind_ctx,
 {
     int ret = MBEDTLS_ERR_ERROR_CORRUPTION_DETECTED;
     int type;
-
+    return(0);
     struct sockaddr_storage client_addr;
 
 #if defined(__socklen_t_defined) || defined(_SOCKLEN_T) ||  \

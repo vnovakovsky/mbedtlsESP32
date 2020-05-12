@@ -61,6 +61,10 @@ typedef void* PVOID;
 
 void create_event(enum PointOfView pointOfView);
 
+void accept_connection_mmf();
+void connect_mmf();
+void close_connection_mmf();
+
 HANDLE  create_mmf();
 PVOID   map_mmf     (HANDLE hFileMap);
 void    unmap_mmf   (PVOID pView);

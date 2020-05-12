@@ -7,6 +7,7 @@
 
 static PVOID gpView = NULL;
 
+HANDLE ghConnectedEvent = NULL;
 HANDLE ghSignalAboutEvent = NULL;
 HANDLE ghWaitForEvent = NULL;
 
@@ -137,11 +138,19 @@ int mbedtls_net_send_mmf(void* ctx, const unsigned char* buf, size_t len)
 }
 
 
+static const char * kConnectedEvent = "ConnectedEvent";
 static const char * kWrittenByServerEvent = "WrittenByServerEvent";
 static const char * kWrittenByClientEvent = "WrittenByClientEvent";
 
 void create_event(enum PointOfView pointOfView)
 {
+    ghConnectedEvent = CreateEventA(
+        NULL,               // default security attributes
+        TRUE,               // manual-reset event
+        FALSE,              // initial state is nonsignaled
+        kConnectedEvent     // object name
+    );
+
     if (ghSignalAboutEvent == NULL)
     {
         if (pointOfView == PointOfView_Server)
@@ -218,6 +227,57 @@ void create_event(enum PointOfView pointOfView)
         }
     }
 }
+
+
+void accept_connection_mmf()
+{
+    printf(">>>>> acceptConnection() waiting for client connection...");
+
+    DWORD dwWaitResult = WaitForSingleObject(
+        ghConnectedEvent, // event handle
+        INFINITE);    // indefinite wait
+
+    switch (dwWaitResult)
+    {
+        // Event object was signaled
+
+    case WAIT_OBJECT_0:
+        //
+        // TODO: Read from the shared buffer
+        //
+        printf(">>>>> accept_connection_mmf(): client connected\n");
+        
+        break;
+
+        // An error occurred
+    default:
+        printf("Wait error (%d)\n", GetLastError());
+        return 0;
+    }
+}
+
+
+void connect_mmf()
+{
+    if (!SetEvent(ghConnectedEvent))
+    {
+        printf("SetEvent failed (%d)\n", GetLastError());
+        return;
+    }
+    printf("!!!!!!!!!!! SetEvent ghConnectedEvent - connecting...\n");
+}
+
+
+void close_connection_mmf()
+{
+    if (!ResetEvent(ghConnectedEvent))
+    {
+        printf("ResetEvent failed (%d)\n", GetLastError());
+        return;
+    }
+    printf("!!!!!!!!!!! ResetEvent ghConnectedEvent - connection is closed\n");
+}
+
 
 HANDLE create_mmf()
 {

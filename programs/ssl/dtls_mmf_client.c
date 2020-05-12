@@ -174,13 +174,16 @@ int main( int argc, char *argv[] )
      */
     mbedtls_printf( "  . Connecting to udp/%s/%s...", SERVER_NAME, SERVER_PORT );
     fflush( stdout );
-
+#if 0
     if( ( ret = mbedtls_net_connect( &server_fd, SERVER_ADDR,
                                          SERVER_PORT, MBEDTLS_NET_PROTO_UDP ) ) != 0 )
     {
         mbedtls_printf( " failed\n  ! mbedtls_net_connect returned %d\n\n", ret );
         goto exit;
     }
+#endif // 0
+
+    connect_mmf();
 
     mbedtls_printf( " ok\n" );
 
@@ -315,6 +318,8 @@ close_notify:
     do ret = mbedtls_ssl_close_notify( &ssl );
     while( ret == MBEDTLS_ERR_SSL_WANT_WRITE );
     ret = 0;
+
+    close_connection_mmf();
 
     mbedtls_printf( " done\n" );
 
