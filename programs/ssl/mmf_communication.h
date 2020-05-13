@@ -59,7 +59,7 @@ int mbedtls_net_recv_timeout_mmf(void* ctx, unsigned char* buf, size_t len,
 typedef void* HANDLE;
 typedef void* PVOID;
 
-void create_event(enum PointOfView pointOfView);
+void create_event_mmf(enum PointOfView pointOfView);
 
 void accept_connection_mmf();
 void connect_mmf();
