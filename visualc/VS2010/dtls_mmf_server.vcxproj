@@ -21,12 +21,16 @@
   <ItemGroup>
     <ClCompile Include="..\..\programs\ssl\dtls_mmf_server.c" />
     <ClCompile Include="..\..\programs\ssl\mmf_communication.c" />
+    <ClCompile Include="..\..\programs\ssl\named_pipe_communication.c" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="mbedTLS.vcxproj">
       <Project>{BFE89EAA-D98B-34E1-C5A4-4080F6FFE320}</Project>
       <LinkLibraryDependencies>true</LinkLibraryDependencies>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\programs\ssl\named_pipe_communication.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{BFE89EAA-D98B-34E1-C5A4-4080F6FFE320}</ProjectGuid>

@@ -21,6 +21,7 @@
   <ItemGroup>
     <ClCompile Include="..\..\programs\ssl\dtls_mmf_client.c" />
     <ClCompile Include="..\..\programs\ssl\mmf_communication.c" />
+    <ClCompile Include="..\..\programs\ssl\named_pipe_communication.c" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="mbedTLS.vcxproj">

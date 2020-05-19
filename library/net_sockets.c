@@ -142,6 +142,9 @@ void mbedtls_net_init( mbedtls_net_context *ctx )
     ctx->fd = -1;
 }
 
+
+int mbedtls_net_connect_pipe(mbedtls_net_context* ctx/*, const char* host,
+    const char* port, int proto*/);
 /*
  * Initiate a TCP connection with host:port and the given protocol
  */
@@ -153,6 +156,8 @@ int mbedtls_net_connect( mbedtls_net_context *ctx, const char *host,
 #ifdef USE_SHARED_MEMORY
     return 0;
 #endif // USE_SHARED_MEMORY
+    mbedtls_net_connect_pipe(ctx);
+    return 0;
     if( ( ret = net_prepare() ) != 0 )
         return( ret );
 
@@ -192,6 +197,8 @@ int mbedtls_net_connect( mbedtls_net_context *ctx, const char *host,
     return( ret );
 }
 
+int mbedtls_net_bind_pipe(mbedtls_net_context* ctx/*, const char* bind_ip, const char* port, int proto*/);
+
 /*
  * Create a listening socket on bind_ip:port
  */
@@ -202,6 +209,10 @@ int mbedtls_net_bind( mbedtls_net_context *ctx, const char *bind_ip, const char 
 #ifdef USE_SHARED_MEMORY
     return 0;
 #endif // USE_SHARED_MEMORY
+#ifdef USE_NAMED_PIPE
+    mbedtls_net_bind_pipe(ctx);
+    return 0;
+#endif // USE_NAMED_PIPE
     if( ( ret = net_prepare() ) != 0 )
         return( ret );
 
@@ -311,6 +322,10 @@ static int net_would_block( const mbedtls_net_context *ctx )
 }
 #endif /* ( _WIN32 || _WIN32_WCE ) && !EFIX64 && !EFI32 */
 
+int mbedtls_net_accept_pipe(mbedtls_net_context* bind_ctx
+    /*mbedtls_net_context* client_ctx,
+    void* client_ip, size_t buf_size, size_t* ip_len*/);
+
 /*
  * Accept a connection from a remote client
  */
@@ -323,6 +338,12 @@ int mbedtls_net_accept( mbedtls_net_context *bind_ctx,
 #ifdef USE_SHARED_MEMORY
     return 0;
 #endif // USE_SHARED_MEMORY
+
+#ifdef USE_NAMED_PIPE
+    mbedtls_net_accept_pipe(bind_ctx);
+    return 0;
+#endif // USE_SHARED_MEMORY
+
     struct sockaddr_storage client_addr;
 
 #if defined(__socklen_t_defined) || defined(_SOCKLEN_T) ||  \
@@ -679,8 +700,11 @@ void mbedtls_net_free( mbedtls_net_context *ctx )
     if( ctx->fd == -1 )
         return;
 
-    shutdown( ctx->fd, 2 );
-    close( ctx->fd );
+    //shutdown( ctx->fd, 2 );
+    /*FlushFileBuffers(ctx->fd);
+    DisconnectNamedPipe(ctx->fd);
+    printf("!!!DisconnectNamedPipe:\n");*/
+    //close( ctx->fd );
 
     ctx->fd = -1;
 }
