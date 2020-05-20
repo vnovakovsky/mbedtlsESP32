@@ -85,13 +85,11 @@ int main( void )
 #if defined(MBEDTLS_SSL_CACHE_C)
 #include "mbedtls/ssl_cache.h"
 #endif
-#ifdef USE_SHARED_MEMORY
+#if defined(USE_SHARED_MEMORY)
 #include "mmf_communication.h"
-#endif // USE_SHARED_MEMORY
-#ifdef USE_NAMED_PIPE
-#include <windows.h>
+#elif defined(USE_NAMED_PIPE)
 #include "named_pipe_communication.h"
-#endif // USE_NAMED_PIPE
+#endif
 
 #define READ_TIMEOUT_MS 100000   /* 5 seconds */
 #define DEBUG_LEVEL 5
@@ -133,6 +131,7 @@ int main(int argc, char* argv[])
 	
     int ret, len;
     mbedtls_net_context listen_fd, client_fd;
+    mbedtls_net_context* pContext = &listen_fd;
     unsigned char buf[1024 * 10];
     const char *pers = "dtls_server";
     unsigned char client_ip[16] = { 0 };
@@ -146,12 +145,7 @@ int main(int argc, char* argv[])
 #if defined(MBEDTLS_SSL_CACHE_C)
     mbedtls_ssl_cache_context cache;
 #endif
-#ifdef USE_NAMED_PIPE
-    //REQUEST Request;
-    //RESPONSE Response;
-    
 
-#endif // USE_SHARED_MEMORY
     mbedtls_net_init( &listen_fd );
     mbedtls_net_init( &client_fd );
     mbedtls_ssl_init( &ssl );
@@ -173,7 +167,15 @@ int main(int argc, char* argv[])
     printf( "  . Bind on udp/*/4433 ..." );
     fflush( stdout );
 
-    if( ( ret = mbedtls_net_bind( &listen_fd, BIND_IP, "4433", MBEDTLS_NET_PROTO_UDP ) ) != 0 )
+#if defined(USE_NET_SOCKETS)
+    ret = mbedtls_net_bind(&listen_fd, BIND_IP, "4433", MBEDTLS_NET_PROTO_UDP);
+#elif defined(USE_SHARED_MEMORY)
+
+#elif defined(USE_NAMED_PIPE)
+    ret = mbedtls_net_bind_pipe(pContext, SERVER_PIPE);
+#endif
+
+    if( ret != 0 )
     {
         printf( " failed\n  ! mbedtls_net_bind returned %d\n\n", ret );
         goto exit;
@@ -267,31 +269,28 @@ reset:
      */
     printf( "  . Waiting for a remote connection ..." );
     fflush( stdout );
-#if defined(USE_NET_SOCKETS)
-    if( ( ret = mbedtls_net_accept( &listen_fd, &client_fd,
-                    client_ip, sizeof( client_ip ), &cliip_len ) ) != 0 )
-    {
-        printf( " failed\n  ! mbedtls_net_accept returned %d\n\n", ret );
-        goto exit;
-    }
-#elif defined(USE_SHARED_MEMORY)
-    accept_connection_mmf(); // simulates blocking call( accept )
 
-    cliip_len = 1;
-    client_ip[0] = 1; // dummy value for shared memory implementation - varified for NULL inside library
-#elif defined (USE_NAMED_PIPE)
-    cliip_len = 1;
-    client_ip[0] = 1; // dummy value for shared memory implementation - varified for NULL inside library
+#if defined(USE_NET_SOCKETS)
     if ((ret = mbedtls_net_accept(&listen_fd, &client_fd,
         client_ip, sizeof(client_ip), &cliip_len)) != 0)
     {
         printf(" failed\n  ! mbedtls_net_accept returned %d\n\n", ret);
         goto exit;
     }
+#elif defined(USE_SHARED_MEMORY)
+    accept_connection_mmf(); // simulates blocking call( accept )
+#elif defined(USE_NAMED_PIPE)
+    if ((ret = mbedtls_net_accept_pipe(pContext)) != 0)
+    {
+        printf(" failed\n  ! mbedtls_net_accept returned %d\n\n", ret);
+        goto exit;
+    }
+#endif
+    
+    cliip_len = 1;
+    client_ip[0] = 1; // dummy value for shared memory implementation - varified for NULL inside library
     client_fd = listen_fd;
-    //BOOL f = ConnectNamedPipe(hNp, NULL);
-    //printf("ConnectNamedPipe finished: %d\n", f);
-#endif // USE_*
+
     /* For HelloVerifyRequest cookies */
     if( ( ret = mbedtls_ssl_set_client_transport_id( &ssl,
                     client_ip, cliip_len ) ) != 0 )
@@ -300,15 +299,17 @@ reset:
                 "mbedtls_ssl_set_client_transport_id() returned -0x%x\n\n", (unsigned int) -ret );
         goto exit;
     }
-#if defined(USE_SHARED_MEMORY)
-    mbedtls_ssl_set_bio( &ssl, &client_fd,
-                         mbedtls_net_send_mmf, mbedtls_net_recv_mmf, mbedtls_net_recv_timeout_mmf);
+#if defined(USE_NET_SOCKETS)
+    mbedtls_ssl_set_bio(&ssl, &client_fd,
+        mbedtls_net_send, mbedtls_net_recv, mbedtls_net_recv_timeout);
+#elif defined(USE_SHARED_MEMORY)
+    mbedtls_ssl_set_bio(&ssl, &client_fd,
+        mbedtls_net_send_mmf, mbedtls_net_recv_mmf, mbedtls_net_recv_timeout_mmf);
 #elif defined(USE_NAMED_PIPE)
     mbedtls_ssl_set_bio(&ssl, &client_fd,
         mbedtls_net_send_pipe, mbedtls_net_recv_pipe, mbedtls_net_recv_timeout_pipe);
-#elif defined(USE_NAMED_PIPE)
+#endif
 
-#endif // USE_*
     printf( " ok\n" );
 
     /*
@@ -423,19 +424,20 @@ close_notify:
     while( ret == MBEDTLS_ERR_SSL_WANT_WRITE );
     ret = 0;
 
-#ifdef USE_SHARED_MEMORY
-    close_connection_mmf();
-#endif //USE_SHARED_MEMORY
+#if defined(USE_SHARED_MEMORY)
 
+    close_connection_mmf();
+
+#elif defined(USE_NAMED_PIPE)
     FlushFileBuffers(listen_fd.fd);
     DisconnectNamedPipe(listen_fd.fd);
     CloseHandle(listen_fd.fd);
-
-    if ((ret = mbedtls_net_bind(&listen_fd, BIND_IP, "4433", MBEDTLS_NET_PROTO_UDP)) != 0)
-    {
-        printf(" failed\n  ! mbedtls_net_bind returned %d\n\n", ret);
-        goto exit;
-    }
+if ((ret = mbedtls_net_bind_pipe(pContext, SERVER_PIPE)) != 0)
+{
+    printf(" failed\n  ! mbedtls_net_bind_pipe returned %d\n\n", ret);
+    goto exit;
+}
+#endif
 
     printf( " done\n" );
 

@@ -142,9 +142,6 @@ void mbedtls_net_init( mbedtls_net_context *ctx )
     ctx->fd = -1;
 }
 
-
-int mbedtls_net_connect_pipe(mbedtls_net_context* ctx/*, const char* host,
-    const char* port, int proto*/);
 /*
  * Initiate a TCP connection with host:port and the given protocol
  */
@@ -153,11 +150,9 @@ int mbedtls_net_connect( mbedtls_net_context *ctx, const char *host,
 {
     int ret = MBEDTLS_ERR_ERROR_CORRUPTION_DETECTED;
     struct addrinfo hints, *addr_list, *cur;
-#ifdef USE_SHARED_MEMORY
+#if defined(USE_SHARED_MEMORY) || defined(USE_NAMED_PIPE)
     return 0;
-#endif // USE_SHARED_MEMORY
-    mbedtls_net_connect_pipe(ctx);
-    return 0;
+#endif
     if( ( ret = net_prepare() ) != 0 )
         return( ret );
 
@@ -206,13 +201,10 @@ int mbedtls_net_bind( mbedtls_net_context *ctx, const char *bind_ip, const char 
 {
     int n, ret;
     struct addrinfo hints, *addr_list, *cur;
-#ifdef USE_SHARED_MEMORY
+#if defined(USE_SHARED_MEMORY) || defined(USE_NAMED_PIPE)
     return 0;
-#endif // USE_SHARED_MEMORY
-#ifdef USE_NAMED_PIPE
-    mbedtls_net_bind_pipe(ctx);
-    return 0;
-#endif // USE_NAMED_PIPE
+#endif
+
     if( ( ret = net_prepare() ) != 0 )
         return( ret );
 
@@ -335,14 +327,10 @@ int mbedtls_net_accept( mbedtls_net_context *bind_ctx,
 {
     int ret = MBEDTLS_ERR_ERROR_CORRUPTION_DETECTED;
     int type;
-#ifdef USE_SHARED_MEMORY
-    return 0;
-#endif // USE_SHARED_MEMORY
 
-#ifdef USE_NAMED_PIPE
-    mbedtls_net_accept_pipe(bind_ctx);
+#if defined(USE_SHARED_MEMORY) || defined(USE_NAMED_PIPE)
     return 0;
-#endif // USE_SHARED_MEMORY
+#endif
 
     struct sockaddr_storage client_addr;
 
@@ -699,12 +687,6 @@ void mbedtls_net_free( mbedtls_net_context *ctx )
 {
     if( ctx->fd == -1 )
         return;
-
-    //shutdown( ctx->fd, 2 );
-    /*FlushFileBuffers(ctx->fd);
-    DisconnectNamedPipe(ctx->fd);
-    printf("!!!DisconnectNamedPipe:\n");*/
-    //close( ctx->fd );
 
     ctx->fd = -1;
 }

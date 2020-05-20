@@ -153,14 +153,7 @@ int main( int argc, char *argv[] )
     /*
      * 0. Initialize the RNG and the session data
      */
-#ifdef USE_SHARED_MEMORY
-    
 
-    
-
-    
-
-#endif // USE_SHARED_MEMORY
     mbedtls_net_init( &server_fd );
     mbedtls_ssl_init( &ssl );
     mbedtls_ssl_config_init( &conf );
@@ -185,16 +178,22 @@ int main( int argc, char *argv[] )
      */
     mbedtls_printf( "  . Connecting to udp/%s/%s...", SERVER_NAME, SERVER_PORT );
     fflush( stdout );
-#ifndef USE_SHARED_MEMORY
-    if( ( ret = mbedtls_net_connect( &server_fd, SERVER_ADDR,
-                                         SERVER_PORT, MBEDTLS_NET_PROTO_UDP ) ) != 0 )
+#if defined(USE_NET_SOCKETS)
+    if ((ret = mbedtls_net_connect(&server_fd, SERVER_ADDR,
+        SERVER_PORT, MBEDTLS_NET_PROTO_UDP)) != 0)
     {
-        mbedtls_printf( " failed\n  ! mbedtls_net_connect returned %d\n\n", ret );
+        mbedtls_printf(" failed\n  ! mbedtls_net_connect returned %d\n\n", ret);
         goto exit;
     }
-#else USE_SHARED_MEMORY
+#elif defined(USE_SHARED_MEMORY)
     connect_mmf();
-#endif // USE_SHARED_MEMORY
+#elif defined(USE_NAMED_PIPE)
+    if ((ret = mbedtls_net_connect_pipe(&server_fd, SERVER_PIPE)))
+    {
+        mbedtls_printf(" failed\n  ! mbedtls_net_connect_pipe returned %d\n\n", ret);
+            goto exit;
+    }
+#endif    
     mbedtls_printf( " ok\n" );
 
     /*
@@ -231,18 +230,17 @@ int main( int argc, char *argv[] )
         mbedtls_printf( " failed\n  ! mbedtls_ssl_set_hostname returned %d\n\n", ret );
         goto exit;
     }
-#ifdef USE_SHARED_MEMORY
-    mbedtls_ssl_set_bio( &ssl, &server_fd,
-                         mbedtls_net_send_mmf, mbedtls_net_recv_mmf, mbedtls_net_recv_timeout_mmf);
 
+#if defined(USE_NET_SOCKETS)
+    mbedtls_ssl_set_bio(&ssl, &server_fd,
+        mbedtls_net_send, mbedtls_net_recv, mbedtls_net_recv_timeout);
+#elif defined(USE_SHARED_MEMORY)
+    mbedtls_ssl_set_bio(&ssl, &server_fd,
+        mbedtls_net_send_mmf, mbedtls_net_recv_mmf, mbedtls_net_recv_timeout_mmf);
 #elif defined(USE_NAMED_PIPE)
     mbedtls_ssl_set_bio(&ssl, &server_fd,
         mbedtls_net_send_pipe, mbedtls_net_recv_pipe, mbedtls_net_recv_timeout_pipe);
-
-#else
-    mbedtls_ssl_set_bio(&ssl, &server_fd,
-        mbedtls_net_send, mbedtls_net_recv, mbedtls_net_recv_timeout);
-#endif // USE_SHARED_MEMORY
+#endif
 
     mbedtls_ssl_set_timer_cb( &ssl, &timer, mbedtls_timing_set_delay,
                                             mbedtls_timing_get_delay );
@@ -356,16 +354,17 @@ exit:
         mbedtls_printf( "Last error was: %d - %s\n\n", ret, error_buf );
     }
 #endif
-#ifdef USE_SHARED_MEMORY    
+
+#if defined(USE_NET_SOCKETS)
+    mbedtls_net_free(&server_fd);
+#elif defined(USE_SHARED_MEMORY)
     unmap_mmf(pView);
     close_mmf(hFileMap);
-#endif // USE_SHARED_MEMORY
+#elif defined(USE_NAMED_PIPE)
     FlushFileBuffers(server_fd.fd);
-    //DisconnectNamedPipe(server_fd.fd);
     CloseHandle(server_fd.fd);
     printf("!!!DisconnectNamedPipe:\n");
-    //DisconnectNamedPipe(server_fd.fd);
-    mbedtls_net_free( &server_fd );
+#endif
 
     mbedtls_ssl_free( &ssl );
     mbedtls_ssl_config_free( &conf );

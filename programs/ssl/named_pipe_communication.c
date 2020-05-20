@@ -3,45 +3,86 @@
 #include "mbedtls/net_sockets.h"    // MBEDTLS_ERR_NET_...
 
 
-int mbedtls_net_connect_pipe(mbedtls_net_context* ctx/*, const char* host,
-    const char* port, int proto*/)
+int mbedtls_net_connect_pipe(mbedtls_net_context* context, const char* pipe_name)
 {
     printf("################ CONNECT.");
-    if (!WaitNamedPipeA(SERVER_PIPE, NMPWAIT_WAIT_FOREVER))
-        printf("WaitNamedPipe error.");
-    /* An instance has become available. Attempt to open it
-     * Another thread could open it first, however or the server could close the instance */
-    HANDLE hNamedPipe = CreateFileA(SERVER_PIPE, GENERIC_READ | GENERIC_WRITE, 0, NULL,
-        OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
-    ctx->fd = hNamedPipe;
+    HANDLE hNamedPipe = 0;
+
+    while (1)
+    {
+        hNamedPipe = CreateFileA(
+            pipe_name,          // pipe name 
+            GENERIC_READ |      // read and write access 
+            GENERIC_WRITE,
+            0,                  // no sharing 
+            NULL,               // default security attributes
+            OPEN_EXISTING,      // opens existing pipe 
+            FILE_ATTRIBUTE_NORMAL, // default attributes 
+            NULL);              // no template file 
+
+        // Break if the pipe handle is valid. 
+        if (hNamedPipe != INVALID_HANDLE_VALUE)
+            break;
+        // Exit if an error other than ERROR_PIPE_BUSY occurs. 
+        if (GetLastError() != ERROR_PIPE_BUSY)
+        {
+            printf("Could not open pipe. GLE=%d\n", GetLastError());
+            return -1;
+        }
+        // All pipe instances are busy, so wait for 20 seconds. 
+        if (!WaitNamedPipe(pipe_name, 60000))
+        {
+            printf("Could not open pipe: 20 second wait timed out.");
+            return -1;
+        }
+    }
+
+    context->fd = hNamedPipe;
     DWORD NpMode = PIPE_READMODE_MESSAGE | PIPE_WAIT;
     if (!SetNamedPipeHandleState(hNamedPipe, &NpMode, NULL, NULL))
+    {
         printf("SetNamedPipeHandleState error.");
+        return -1;
+    }
     printf("################ CONNECTED.");
+    return 0;
 }
 
-int mbedtls_net_bind_pipe(mbedtls_net_context* ctx/*, const char* bind_ip, const char* port, int proto*/)
+int mbedtls_net_bind_pipe(mbedtls_net_context* context, const char* pipe_name)
 {
     printf("################ BIND.");
     LPSECURITY_ATTRIBUTES pNPSA = NULL;
-    HANDLE hNp = CreateNamedPipeA(SERVER_PIPE, PIPE_ACCESS_DUPLEX,
+    HANDLE hNp = CreateNamedPipeA(pipe_name, PIPE_ACCESS_DUPLEX,
         PIPE_READMODE_MESSAGE | PIPE_TYPE_MESSAGE | PIPE_WAIT,
         MAX_CLIENTS, 0, 0, INFINITE, pNPSA);
 
     if (hNp == INVALID_HANDLE_VALUE)
+    {
         printf("Failure to open named pipe.");
-    ctx->fd = (int) hNp;
+        return INVALID_HANDLE_VALUE;
+    }
+    context->fd = (int) hNp;
+    return 0;
 }
 
 
-int mbedtls_net_accept_pipe(mbedtls_net_context* bind_ctx
-    /*mbedtls_net_context* client_ctx,
-    void* client_ip, size_t buf_size, size_t* ip_len*/)
+int mbedtls_net_accept_pipe(mbedtls_net_context* context)
 {
-    printf("################ ACCEPT.");
-    HANDLE hNp = bind_ctx->fd;
-    BOOL f = ConnectNamedPipe(hNp, NULL);
-    printf("ConnectNamedPipe finished: %d\n", f);
+    printf("################ ACCEPT. ConnectNamedPipe\n");
+    HANDLE hNp = context->fd;
+    BOOL is_connected = ConnectNamedPipe(hNp, NULL) ?
+        TRUE : (GetLastError() == ERROR_PIPE_CONNECTED);
+    if (is_connected)
+    {
+        printf("ConnectNamedPipe finished: %d\n", is_connected);
+        return 0;
+    }
+    else
+    {
+        printf("ConnectNamedPipe failed. The client could not connect, so close the pipe: %d\n", is_connected);
+        CloseHandle(hNp);
+        return -1;
+    }
 }
 
 /*
@@ -49,40 +90,19 @@ int mbedtls_net_accept_pipe(mbedtls_net_context* bind_ctx
 */
 int mbedtls_net_recv_pipe(void* ctx, unsigned char* buf, size_t len)
 {
-    int ret = MBEDTLS_ERR_ERROR_CORRUPTION_DETECTED;
     int fd = ((mbedtls_net_context*)ctx)->fd;
 
-    /*if (fd < 0)
+    if (fd < 0)
         return(MBEDTLS_ERR_NET_INVALID_CONTEXT);
-    */
-    //REQUEST Request;
-    //RESPONSE Response;
-    DWORD nXfer;
+
+    DWORD n_received = 0;
     HANDLE hNp = ((mbedtls_net_context*)ctx)->fd;
-    ReadFile(hNp, buf, len/*RQ_SIZE*/, &nXfer, NULL);
-    ret = nXfer;
-#if 0
-    if (ret < 0)
+    BOOL is_success = ReadFile(hNp, buf, len, &n_received, NULL);
+    if (!is_success)
     {
-        if (net_would_block(ctx) != 0)
-            return(MBEDTLS_ERR_SSL_WANT_READ);
-
-#if ( defined(_WIN32) || defined(_WIN32_WCE) ) && !defined(EFIX64) && \
-    !defined(EFI32)
-        if (WSAGetLastError() == WSAECONNRESET)
-            return(MBEDTLS_ERR_NET_CONN_RESET);
-#else
-        if (errno == EPIPE || errno == ECONNRESET)
-            return(MBEDTLS_ERR_NET_CONN_RESET);
-
-        if (errno == EINTR)
-            return(MBEDTLS_ERR_SSL_WANT_READ);
-#endif
-
         return(MBEDTLS_ERR_NET_RECV_FAILED);
     }
-#endif //0
-    return(ret);
+    return n_received;
 }
 
 /*
@@ -91,46 +111,7 @@ int mbedtls_net_recv_pipe(void* ctx, unsigned char* buf, size_t len)
 int mbedtls_net_recv_timeout_pipe(void* ctx, unsigned char* buf,
     size_t len, uint32_t timeout)
 {
-    int ret = MBEDTLS_ERR_ERROR_CORRUPTION_DETECTED;
-    struct timeval tv;
-    fd_set read_fds;
-    int fd = ((mbedtls_net_context*)ctx)->fd;
-
-    /*if (fd < 0)
-        return(MBEDTLS_ERR_NET_INVALID_CONTEXT);*/
-
     return mbedtls_net_recv_pipe(ctx, buf, len);
-
-#if 0
-    FD_ZERO(&read_fds);
-    FD_SET(fd, &read_fds);
-
-    tv.tv_sec = timeout / 1000;
-    tv.tv_usec = (timeout % 1000) * 1000;
-
-    ret = select(fd + 1, &read_fds, NULL, NULL, timeout == 0 ? NULL : &tv);
-
-    /* Zero fds ready means we timed out */
-    if (ret == 0)
-        return(MBEDTLS_ERR_SSL_TIMEOUT);
-
-    if (ret < 0)
-    {
-#if ( defined(_WIN32) || defined(_WIN32_WCE) ) && !defined(EFIX64) && \
-    !defined(EFI32)
-        if (WSAGetLastError() == WSAEINTR)
-            return(MBEDTLS_ERR_SSL_WANT_READ);
-#else
-        if (errno == EINTR)
-            return(MBEDTLS_ERR_SSL_WANT_READ);
-#endif
-
-        return(MBEDTLS_ERR_NET_RECV_FAILED);
-    }
-
-    /* This call will not block */
-    return(mbedtls_net_recv(ctx, buf, len));
-#endif // 0
 }
 
 /*
@@ -138,45 +119,24 @@ int mbedtls_net_recv_timeout_pipe(void* ctx, unsigned char* buf,
  */
 int mbedtls_net_send_pipe(void* ctx, const unsigned char* buf, size_t len)
 {
-    //getchar();
-    int ret = MBEDTLS_ERR_ERROR_CORRUPTION_DETECTED;
     int fd = ((mbedtls_net_context*)ctx)->fd;
 
-    /*if (fd < 0)
-        return(MBEDTLS_ERR_NET_INVALID_CONTEXT);*/
+    if (fd < 0)
+        return(MBEDTLS_ERR_NET_INVALID_CONTEXT);
 
-        //ret = (int)write(fd, buf, len);
-    //RESPONSE Response;
-    //Response.Status = 1; strcpy(Response.Record, "");
-    HANDLE hNamedPipe = ((mbedtls_net_context*)ctx)->fd;
-    DWORD length = len;
-    WriteFile(hNamedPipe, buf, len/*RS_SIZE*/, &length, NULL);
-    return len;
-#if 0
-    if (ret < 0)
+    HANDLE hNp = ((mbedtls_net_context*)ctx)->fd;
+    DWORD bytes_written = 0;
+    BOOL is_success = WriteFile(hNp, buf, len, &bytes_written, NULL);
+
+    if (!is_success)
     {
-        if (net_would_block(ctx) != 0)
-            return(MBEDTLS_ERR_SSL_WANT_WRITE);
-
-#if ( defined(_WIN32) || defined(_WIN32_WCE) ) && !defined(EFIX64) && \
-    !defined(EFI32)
-        if (WSAGetLastError() == WSAECONNRESET)
-            return(MBEDTLS_ERR_NET_CONN_RESET);
-#else
-        if (errno == EPIPE || errno == ECONNRESET)
-            return(MBEDTLS_ERR_NET_CONN_RESET);
-
-        if (errno == EINTR)
-            return(MBEDTLS_ERR_SSL_WANT_WRITE);
-#endif
-
+        printf("WriteFile to pipe failed. GLE=%d\n", GetLastError());
         return(MBEDTLS_ERR_NET_SEND_FAILED);
     }
-#endif // 0
-    //return(ret);
+    return bytes_written;
 }
 
-mbedtls_net_free_pipe(mbedtls_net_context* ctx)
+void mbedtls_net_free_pipe(mbedtls_net_context* ctx)
 {
     HANDLE hPipe = ctx->fd;
     CloseHandle(hPipe);
