@@ -336,6 +336,7 @@ close_notify:
     /* No error checking, the connection might be closed already */
     do ret = mbedtls_ssl_close_notify( &ssl );
     while( ret == MBEDTLS_ERR_SSL_WANT_WRITE );
+    ret = mbedtls_ssl_read(&ssl, buf, len);
     ret = 0;
 #ifdef USE_SHARED_MEMORY
     close_connection_mmf();
@@ -360,7 +361,8 @@ exit:
     close_mmf(hFileMap);
 #endif // USE_SHARED_MEMORY
     FlushFileBuffers(server_fd.fd);
-    DisconnectNamedPipe(server_fd.fd);
+    //DisconnectNamedPipe(server_fd.fd);
+    CloseHandle(server_fd.fd);
     printf("!!!DisconnectNamedPipe:\n");
     //DisconnectNamedPipe(server_fd.fd);
     mbedtls_net_free( &server_fd );

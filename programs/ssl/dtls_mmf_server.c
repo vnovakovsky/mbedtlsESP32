@@ -414,10 +414,11 @@ reset:
      */
 close_notify:
     printf( "  . Closing the connection..." );
-    Sleep(5000); // wait untill client will call mbedtls_ssl_close_notify (with old credentials)
+    //Sleep(5000); // wait untill client will call mbedtls_ssl_close_notify (with old credentials)
                  // - otherwise server would change session password earlier then mbedtls_ssl_close_notify happens
 
     /* No error checking, the connection might be closed already */
+    ret = mbedtls_ssl_read(&ssl, buf, len);
     do ret = mbedtls_ssl_close_notify( &ssl );
     while( ret == MBEDTLS_ERR_SSL_WANT_WRITE );
     ret = 0;
@@ -425,6 +426,16 @@ close_notify:
 #ifdef USE_SHARED_MEMORY
     close_connection_mmf();
 #endif //USE_SHARED_MEMORY
+
+    FlushFileBuffers(listen_fd.fd);
+    DisconnectNamedPipe(listen_fd.fd);
+    CloseHandle(listen_fd.fd);
+
+    if ((ret = mbedtls_net_bind(&listen_fd, BIND_IP, "4433", MBEDTLS_NET_PROTO_UDP)) != 0)
+    {
+        printf(" failed\n  ! mbedtls_net_bind returned %d\n\n", ret);
+        goto exit;
+    }
 
     printf( " done\n" );
 

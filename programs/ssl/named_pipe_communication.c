@@ -175,3 +175,9 @@ int mbedtls_net_send_pipe(void* ctx, const unsigned char* buf, size_t len)
 #endif // 0
     //return(ret);
 }
+
+mbedtls_net_free_pipe(mbedtls_net_context* ctx)
+{
+    HANDLE hPipe = ctx->fd;
+    CloseHandle(hPipe);
+}
