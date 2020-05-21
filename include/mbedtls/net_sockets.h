@@ -87,6 +87,17 @@ extern "C" {
 typedef struct mbedtls_net_context
 {
     int fd;             /**< The underlying file descriptor                 */
+
+#if defined(USE_SHARED_MEMORY)
+    void* hFileMap;
+    void* pView;
+
+    void* hConnectedEvent;
+    void* hSignalAboutEvent;
+    void* hWaitForEvent;
+#elif defined(USE_NAMED_PIPE)
+
+#endif
 }
 mbedtls_net_context;
 

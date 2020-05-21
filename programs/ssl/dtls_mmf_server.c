@@ -18,7 +18,8 @@
  *
  *  This file is part of mbed TLS (https://tls.mbed.org)
  */
-
+#pragma warning( disable : 4996 ) // strcpy unsafe
+#include <assert.h>
 #if !defined(MBEDTLS_CONFIG_FILE)
 #include "mbedtls/config.h"
 #else
@@ -129,6 +130,7 @@ int main(int argc, char* argv[])
 	
     int ret, len;
     mbedtls_net_context listen_fd, client_fd;
+    mbedtls_net_context* pContext = &client_fd;
     unsigned char buf[1024];
     const char *pers = "dtls_server";
     unsigned char client_ip[16] = { 0 };
@@ -142,13 +144,11 @@ int main(int argc, char* argv[])
 #if defined(MBEDTLS_SSL_CACHE_C)
     mbedtls_ssl_cache_context cache;
 #endif
-#ifdef USE_SHARED_MEMORY
-    create_event_mmf(PointOfView_Server);
-    HANDLE hFileMap = create_mmf();
-    PVOID pView = map_mmf(hFileMap);
-#endif // USE_SHARED_MEMORY
     mbedtls_net_init( &listen_fd );
-    mbedtls_net_init( &client_fd );
+    mbedtls_net_init(&client_fd);
+#ifdef USE_SHARED_MEMORY
+    init_mmf(pContext);
+#endif // USE_SHARED_MEMORY
     mbedtls_ssl_init( &ssl );
     mbedtls_ssl_config_init( &conf );
     mbedtls_ssl_cookie_init( &cookie_ctx );
@@ -167,12 +167,18 @@ int main(int argc, char* argv[])
      */
     printf( "  . Bind on udp/*/4433 ..." );
     fflush( stdout );
-
+#if defined(USE_NET_SOCKETS)
     if( ( ret = mbedtls_net_bind( &listen_fd, BIND_IP, "4433", MBEDTLS_NET_PROTO_UDP ) ) != 0 )
     {
         printf( " failed\n  ! mbedtls_net_bind returned %d\n\n", ret );
         goto exit;
     }
+#elif defined(USE_SHARED_MEMORY)
+    assert(create_event_mmf(pContext, PointOfView_Server));
+    assert(create_mmf(pContext));
+#elif defined(USE_NAMED_PIPE)
+
+#endif
 
     printf( " ok\n" );
 
@@ -262,20 +268,25 @@ reset:
      */
     printf( "  . Waiting for a remote connection ..." );
     fflush( stdout );
-#ifndef USE_SHARED_MEMORY
+#if defined(USE_NET_SOCKETS)
     if( ( ret = mbedtls_net_accept( &listen_fd, &client_fd,
                     client_ip, sizeof( client_ip ), &cliip_len ) ) != 0 )
     {
         printf( " failed\n  ! mbedtls_net_accept returned %d\n\n", ret );
         goto exit;
     }
-#else
+#elif defined(USE_SHARED_MEMORY)
 
-    accept_connection_mmf(); // simulates blocking call( accept )
-
+    if(!accept_connection_mmf(pContext)) // simulates blocking call( accept )
+    {
+        printf(" failed\n  ! accept_connection_mmf returned %d\n\n", ret);
+        goto exit;
+    }
     cliip_len = 1;
     client_ip[0] = 1; // dummy value for shared memory implementation - varified for NULL inside library
-#endif // USE_SHARED_MEMORY
+
+#endif
+
     /* For HelloVerifyRequest cookies */
     if( ( ret = mbedtls_ssl_set_client_transport_id( &ssl,
                     client_ip, cliip_len ) ) != 0 )
@@ -284,13 +295,15 @@ reset:
                 "mbedtls_ssl_set_client_transport_id() returned -0x%x\n\n", (unsigned int) -ret );
         goto exit;
     }
-#ifdef USE_SHARED_MEMORY
-    mbedtls_ssl_set_bio( &ssl, &client_fd,
-                         mbedtls_net_send_mmf, mbedtls_net_recv_mmf, mbedtls_net_recv_timeout_mmf);
-#else
+#if defined(USE_NET_SOCKETS)
     mbedtls_ssl_set_bio(&ssl, &client_fd,
         mbedtls_net_send, mbedtls_net_recv, mbedtls_net_recv_timeout);
-#endif // USE_SHARED_MEMORY
+#elif defined(USE_SHARED_MEMORY)
+    mbedtls_ssl_set_bio( &ssl, &client_fd,
+                         mbedtls_net_send_mmf, mbedtls_net_recv_mmf, mbedtls_net_recv_timeout_mmf);
+
+#endif
+
     printf( " ok\n" );
 
     /*
@@ -405,7 +418,7 @@ close_notify:
     ret = 0;
 
 #ifdef USE_SHARED_MEMORY
-    close_connection_mmf();
+    assert(close_connection_mmf(pContext));
 #endif //USE_SHARED_MEMORY
 
     printf( " done\n" );
@@ -417,10 +430,6 @@ close_notify:
      */
 exit:
 
-#ifdef USE_SHARED_MEMORY
-    unmap_mmf(pView);
-    close_mmf(hFileMap);
-#endif //USE_SHARED_MEMORY
 
 #ifdef MBEDTLS_ERROR_C
     if( ret != 0 )
@@ -430,10 +439,13 @@ exit:
         printf( "Last error was: %d - %s\n\n", ret, error_buf );
     }
 #endif
-
+#if defined(USE_NET_SOCKETS)
     mbedtls_net_free( &client_fd );
     mbedtls_net_free( &listen_fd );
+#elif defined(USE_SHARED_MEMORY)
+    free_mmf(pContext);
 
+#endif
     mbedtls_ssl_free( &ssl );
     mbedtls_ssl_config_free( &conf );
     mbedtls_ssl_cookie_free( &cookie_ctx );

@@ -56,18 +56,14 @@ int mbedtls_net_send_mmf(void* ctx, const unsigned char* buf, size_t len);
 int mbedtls_net_recv_timeout_mmf(void* ctx, unsigned char* buf, size_t len,
     uint32_t timeout);
 
-typedef void* HANDLE;
-typedef void* PVOID;
+typedef int                 BOOL;
 
-void create_event_mmf(enum PointOfView pointOfView);
+BOOL create_event_mmf(mbedtls_net_context* pContext, enum PointOfView pointOfView);
 
-void accept_connection_mmf();
-void connect_mmf();
-void close_connection_mmf();
+void init_mmf               (mbedtls_net_context* pContext);
+BOOL create_mmf             (mbedtls_net_context* pContext);
 
-HANDLE  create_mmf();
-PVOID   map_mmf     (HANDLE hFileMap);
-void    unmap_mmf   (PVOID pView);
-void    write_mmf   (PVOID pView, void* buf, int nbytes);
-int     read_mmf    (PVOID pView, void* buf);
-void    close_mmf   (HANDLE hFileMap);
+BOOL accept_connection_mmf  (mbedtls_net_context* pContext);
+BOOL connect_mmf            (mbedtls_net_context* pContext);
+BOOL close_connection_mmf   (mbedtls_net_context* pContext);
+void free_mmf               (mbedtls_net_context* pContext);

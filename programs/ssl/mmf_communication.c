@@ -3,14 +3,12 @@
 #include "mmf_communication.h"
 #include <windows.h>
 
+#include <assert.h>
 #include <stdio.h>
 
-static PVOID gpView = NULL;
 
-static HANDLE ghConnectedEvent = NULL;
-static HANDLE ghSignalAboutEvent = NULL;
-static HANDLE ghWaitForEvent = NULL;
-
+static int read_mmf(mbedtls_net_context* pContext, void* buf);
+static BOOL write_mmf(mbedtls_net_context* pContext, const unsigned char* buf, int nbytes);
 void hexDump(char* desc, void* addr, int len);
 
 /*
@@ -19,33 +17,17 @@ void hexDump(char* desc, void* addr, int len);
 int mbedtls_net_recv_mmf(void* ctx, unsigned char* buf, size_t len)
 {
     int ret = MBEDTLS_ERR_ERROR_CORRUPTION_DETECTED;
-    int fd = ((mbedtls_net_context*)ctx)->fd;
+    mbedtls_net_context* pContext = (mbedtls_net_context*)ctx;
 
-    /*if (fd < 0)
+    if (pContext->pView < 0)
         return(MBEDTLS_ERR_NET_INVALID_CONTEXT);
-    */
-    ret = (int)read_mmf(gpView, buf);
-#if 0
+
+    ret = (int)read_mmf(pContext, buf);
+
     if (ret < 0)
     {
-        if (net_would_block(ctx) != 0)
-            return(MBEDTLS_ERR_SSL_WANT_READ);
-
-#if ( defined(_WIN32) || defined(_WIN32_WCE) ) && !defined(EFIX64) && \
-    !defined(EFI32)
-        if (WSAGetLastError() == WSAECONNRESET)
-            return(MBEDTLS_ERR_NET_CONN_RESET);
-#else
-        if (errno == EPIPE || errno == ECONNRESET)
-            return(MBEDTLS_ERR_NET_CONN_RESET);
-
-        if (errno == EINTR)
-            return(MBEDTLS_ERR_SSL_WANT_READ);
-#endif
-
         return(MBEDTLS_ERR_NET_RECV_FAILED);
     }
-#endif //0
     return(ret);
 }
 
@@ -56,45 +38,8 @@ int mbedtls_net_recv_timeout_mmf(void* ctx, unsigned char* buf,
     size_t len, uint32_t timeout)
 {
     int ret = MBEDTLS_ERR_ERROR_CORRUPTION_DETECTED;
-    struct timeval tv;
-    fd_set read_fds;
-    int fd = ((mbedtls_net_context*)ctx)->fd;
-
-    /*if (fd < 0)
-        return(MBEDTLS_ERR_NET_INVALID_CONTEXT);*/
 
     return mbedtls_net_recv_mmf(ctx, buf, len);
-
-#if 0
-    FD_ZERO(&read_fds);
-    FD_SET(fd, &read_fds);
-
-    tv.tv_sec = timeout / 1000;
-    tv.tv_usec = (timeout % 1000) * 1000;
-
-    ret = select(fd + 1, &read_fds, NULL, NULL, timeout == 0 ? NULL : &tv);
-
-    /* Zero fds ready means we timed out */
-    if (ret == 0)
-        return(MBEDTLS_ERR_SSL_TIMEOUT);
-
-    if (ret < 0)
-    {
-#if ( defined(_WIN32) || defined(_WIN32_WCE) ) && !defined(EFIX64) && \
-    !defined(EFI32)
-        if (WSAGetLastError() == WSAEINTR)
-            return(MBEDTLS_ERR_SSL_WANT_READ);
-#else
-        if (errno == EINTR)
-            return(MBEDTLS_ERR_SSL_WANT_READ);
-#endif
-
-        return(MBEDTLS_ERR_NET_RECV_FAILED);
-    }
-
-    /* This call will not block */
-    return(mbedtls_net_recv(ctx, buf, len));
-#endif // 0
 }
 
 /*
@@ -102,39 +47,18 @@ int mbedtls_net_recv_timeout_mmf(void* ctx, unsigned char* buf,
  */
 int mbedtls_net_send_mmf(void* ctx, const unsigned char* buf, size_t len)
 {
-    //getchar();
     int ret = MBEDTLS_ERR_ERROR_CORRUPTION_DETECTED;
-    int fd = ((mbedtls_net_context*)ctx)->fd;
+    mbedtls_net_context* pContext = (mbedtls_net_context*)ctx;
 
-    /*if (fd < 0)
-        return(MBEDTLS_ERR_NET_INVALID_CONTEXT);*/
+    if (pContext->pView < 0)
+        return(MBEDTLS_ERR_NET_INVALID_CONTEXT);
 
-    //ret = (int)write(fd, buf, len);
-    write_mmf(gpView, buf, len);
-    
-    return len;
-#if 0
-    if (ret < 0)
+    if (!write_mmf(pContext, buf, len))
     {
-        if (net_would_block(ctx) != 0)
-            return(MBEDTLS_ERR_SSL_WANT_WRITE);
-
-#if ( defined(_WIN32) || defined(_WIN32_WCE) ) && !defined(EFIX64) && \
-    !defined(EFI32)
-        if (WSAGetLastError() == WSAECONNRESET)
-            return(MBEDTLS_ERR_NET_CONN_RESET);
-#else
-        if (errno == EPIPE || errno == ECONNRESET)
-            return(MBEDTLS_ERR_NET_CONN_RESET);
-
-        if (errno == EINTR)
-            return(MBEDTLS_ERR_SSL_WANT_WRITE);
-#endif
-
         return(MBEDTLS_ERR_NET_SEND_FAILED);
     }
-#endif // 0
-    //return(ret);
+    
+    return len;
 }
 
 
@@ -142,99 +66,109 @@ static const char * kConnectedEvent = "ConnectedEvent";
 static const char * kWrittenByServerEvent = "WrittenByServerEvent";
 static const char * kWrittenByClientEvent = "WrittenByClientEvent";
 
-void create_event_mmf(enum PointOfView pointOfView)
+void init_mmf(mbedtls_net_context* pContext)
 {
-    ghConnectedEvent = CreateEventA(
+    pContext->hFileMap          = NULL;
+    pContext->pView             = NULL;
+    pContext->hConnectedEvent   = NULL;
+    pContext->hSignalAboutEvent = NULL;
+    pContext->hWaitForEvent     = NULL;
+}
+
+BOOL create_event_mmf(mbedtls_net_context* pContext, enum PointOfView pointOfView)
+{
+    pContext->hConnectedEvent = CreateEventA(
         NULL,               // default security attributes
         TRUE,               // manual-reset event
         FALSE,              // initial state is nonsignaled
         kConnectedEvent     // object name
     );
 
-    if (ghSignalAboutEvent == NULL)
+    if (pContext->hSignalAboutEvent == NULL)
     {
         if (pointOfView == PointOfView_Server)
         {
-            ghSignalAboutEvent = CreateEventA(
+            pContext->hSignalAboutEvent = CreateEventA(
                 NULL,               // default security attributes
                 FALSE,              // manual-reset event
                 FALSE,              // initial state is nonsignaled
                 kWrittenByServerEvent  // object name
             );
-            if (ghSignalAboutEvent == NULL)
+            if (pContext->hSignalAboutEvent == NULL)
             {
                 printf("WrittenByServerEvent CreateEvent failed (%d)\n", GetLastError());
-                return;
+                return FALSE;
             }
         }
         else if (pointOfView == PointOfView_Client)
         {
-            ghSignalAboutEvent = CreateEventA(
+            pContext->hSignalAboutEvent = CreateEventA(
                 NULL,               // default security attributes
                 FALSE,               // manual-reset event
                 FALSE,              // initial state is nonsignaled
                 kWrittenByClientEvent  // object name
             );
-            if (ghSignalAboutEvent == NULL)
+            if (pContext->hSignalAboutEvent == NULL)
             {
                 printf("WrittenByClientEvent CreateEvent failed (%d)\n", GetLastError());
-                return;
+                return FALSE;
             }
         }
         else
         {
             printf("unexpected point of view (%d)\n", pointOfView);
-            return;
+            return FALSE;
         }
     }
     
     ///////////////////////
 
-    if (ghWaitForEvent == NULL)
+    if (pContext->hWaitForEvent == NULL)
     {
         if (pointOfView == PointOfView_Server)
         {
-            ghWaitForEvent = CreateEventA(
+            pContext->hWaitForEvent = CreateEventA(
                 NULL,               // default security attributes
                 FALSE,               // manual-reset event
                 FALSE,              // initial state is nonsignaled
                 kWrittenByClientEvent  // object name
             );
-            if (ghWaitForEvent == NULL)
+            if (pContext->hWaitForEvent == NULL)
             {
                 printf("WrittenByClientEvent CreateEvent failed (%d)\n", GetLastError());
-                return;
+                return FALSE;
             }
         }
         else if (pointOfView == PointOfView_Client)
         {
-            ghWaitForEvent = CreateEventA(
+            pContext->hWaitForEvent = CreateEventA(
                 NULL,               // default security attributes
                 FALSE,               // manual-reset event
                 FALSE,              // initial state is nonsignaled
                 kWrittenByServerEvent  // object name
             );
-            if (ghWaitForEvent == NULL)
+            if (pContext->hWaitForEvent == NULL)
             {
                 printf("WrittenByServerEvent CreateEvent failed (%d)\n", GetLastError());
-                return;
+                return FALSE;
             }
         }
         else
         {
             printf("unexpected point of view (%d)\n", pointOfView);
-            return;
+            return FALSE;
         }
     }
+    return TRUE;
 }
 
 
-void accept_connection_mmf()
+BOOL accept_connection_mmf(mbedtls_net_context* pContext)
 {
     printf(">>>>> acceptConnection() waiting for client connection...");
 
     DWORD dwWaitResult = WaitForSingleObject(
-        ghConnectedEvent, // event handle
+        pContext->hConnectedEvent, // event handle
         INFINITE);    // indefinite wait
 
     switch (dwWaitResult)
@@ -247,49 +181,54 @@ void accept_connection_mmf()
         //
         printf(">>>>> accept_connection_mmf(): client connected\n");
         
-        break;
+        return TRUE;
 
         // An error occurred
     default:
         printf("Wait error (%d)\n", GetLastError());
-        return 0;
+        return FALSE;
     }
 }
 
 
-void connect_mmf()
+BOOL connect_mmf(mbedtls_net_context* pContext)
 {
-    if (!SetEvent(ghConnectedEvent))
+    assert(create_event_mmf(pContext, PointOfView_Client));
+    assert(create_mmf(pContext));
+
+    if (!SetEvent(pContext->hConnectedEvent))
     {
         printf("SetEvent failed (%d)\n", GetLastError());
-        return;
+        return FALSE;
     }
     printf("!!!!!!!!!!! SetEvent ghConnectedEvent - connecting...\n");
+    return TRUE;
 }
 
 
-void close_connection_mmf()
+BOOL close_connection_mmf(mbedtls_net_context* pContext)
 {
-    if (!ResetEvent(ghConnectedEvent))
+    if (!ResetEvent(pContext->hConnectedEvent))
     {
         printf("ResetEvent failed (%d)\n", GetLastError());
-        return;
+        return FALSE;
     }
-    if (!ResetEvent(ghSignalAboutEvent))
+    if (!ResetEvent(pContext->hSignalAboutEvent))
     {
         printf("ResetEvent failed (%d)\n", GetLastError());
-        return;
+        return FALSE;
     }
-    if (!ResetEvent(ghWaitForEvent))
+    if (!ResetEvent(pContext->hWaitForEvent))
     {
         printf("ResetEvent failed (%d)\n", GetLastError());
-        return;
+        return FALSE;
     }
     printf("!!!!!!!!!!! ResetEvent ghConnectedEvent - connection is closed\n");
+    return TRUE;
 }
 
 
-HANDLE create_mmf()
+BOOL create_mmf(mbedtls_net_context* pContext)
 {
     HANDLE hFileMap = CreateFileMapping(INVALID_HANDLE_VALUE, NULL,
         PAGE_READWRITE, 0, 100 * 1024, TEXT("MMFSharedData"));
@@ -303,66 +242,55 @@ HANDLE create_mmf()
                 FALSE, TEXT("MMFSharedData"));
             if (hFileMap == NULL) {
                 printf("Can't open file mapping.");
-                return NULL;
+                return FALSE;
             }
         }
+        pContext->hFileMap = hFileMap;
+        PVOID pView = MapViewOfFile(hFileMap,
+            FILE_MAP_READ | FILE_MAP_WRITE, 0, 0, 0);
 
+        if (pView != NULL) {
+            printf("view of file mapped.");
+            pContext->pView = pView;
+        }
+        else {
+            printf("Can't map view of file.");
+            return FALSE;
+        }
         // File mapping created successfully.
-        return hFileMap;
+        return TRUE;
     }
     else {
         printf("Can't create file mapping.");
+        return FALSE;
     }
-    return NULL;
-}
-
-PVOID map_mmf(HANDLE hFileMap)
-{
-    // Map a view of the file into the address space.
-    gpView = MapViewOfFile(hFileMap,
-        FILE_MAP_READ | FILE_MAP_WRITE, 0, 0, 0);
-
-    if (gpView != NULL) {
-        printf("view of file mapped.");
-    }
-    else {
-        printf("Can't map view of file.");
-    }
-    return gpView;
+    return TRUE;
 }
 
 
-void unmap_mmf(PVOID pView)
+static BOOL write_mmf(mbedtls_net_context* pContext, const unsigned char* buf, int nbytes)
 {
-    if (gpView)
-    {
-        UnmapViewOfFile(gpView);
-    }
-}
-
-
-void write_mmf(PVOID pView, void* buf, int nbytes)
-{
-    unsigned int* ptr = (unsigned int*)pView;
+    unsigned int* ptr = (unsigned int*)pContext->pView;
     *ptr = nbytes;
     ptr++;
     memcpy(ptr, buf, nbytes);
-    hexDump("write_mmf: pView", pView, nbytes + sizeof(unsigned int));
+    hexDump("write_mmf: pView", pContext->pView, nbytes + sizeof(unsigned int));
     hexDump("write_mmf: buf", ptr, nbytes);
-    if (!SetEvent(ghSignalAboutEvent))
+    if (!SetEvent(pContext->hSignalAboutEvent))
     {
         printf("SetEvent failed (%d)\n", GetLastError());
-        return;
+        return FALSE;
     }
     printf("!!!!!!!!!!! SetEvent ghSignalAboutEvent\n");
+    return TRUE;
 }
 
-int read_mmf(PVOID pView, void* buf)
+static int read_mmf(mbedtls_net_context* pContext, void* buf)
 {
     printf(">>>>> READ_mmf waiting on ghWaitForEvent...");
 
     DWORD dwWaitResult = WaitForSingleObject(
-        ghWaitForEvent, // event handle
+        pContext->hWaitForEvent, // event handle
         INFINITE);    // indefinite wait
 
     switch (dwWaitResult)
@@ -374,14 +302,13 @@ int read_mmf(PVOID pView, void* buf)
         // TODO: Read from the shared buffer
         //
         printf(">>>>> READ_mmf reading...\n");
-        //getchar();
         
-        unsigned int* ptr = (unsigned int*)pView;
+        unsigned int* ptr = (unsigned int*)pContext->pView;
         unsigned int nbytes = *ptr;
         //pView = ptr + 1;
         ptr++;
         memcpy(buf, ptr, nbytes);
-        hexDump("read_mmf: pView", pView, nbytes + sizeof(unsigned int));
+        hexDump("read_mmf: pView", pContext->pView, nbytes + sizeof(unsigned int));
         hexDump("read_mmf: buf", ptr, nbytes);
         return nbytes;
         break;
@@ -394,11 +321,15 @@ int read_mmf(PVOID pView, void* buf)
 }
 
 
-void close_mmf(HANDLE hFileMap)
+void free_mmf(mbedtls_net_context* pContext)
 {
-    CloseHandle(hFileMap);
-    CloseHandle(ghSignalAboutEvent);
-    CloseHandle(ghWaitForEvent);
+    if (pContext->pView)
+    {
+        UnmapViewOfFile(pContext->pView);
+    }
+    CloseHandle(pContext->hFileMap);
+    CloseHandle(pContext->hSignalAboutEvent);
+    CloseHandle(pContext->hWaitForEvent);
 }
 
 

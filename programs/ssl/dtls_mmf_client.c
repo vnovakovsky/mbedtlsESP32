@@ -96,13 +96,14 @@ static void my_debug( void *ctx, int level,
     fflush(  (FILE *) ctx  );
 }
 
-int main( int argc, char *argv[] )
+int main(int argc, char* argv[])
 {
     int ret, len;
     mbedtls_net_context server_fd;
+    mbedtls_net_context* pContext = &server_fd;
     uint32_t flags;
     unsigned char buf[1024];
-    const char *pers = "dtls_client";
+    const char* pers = "dtls_client";
     int retry_left = MAX_RETRY;
 
     mbedtls_entropy_context entropy;
@@ -143,51 +144,55 @@ int main( int argc, char *argv[] )
     }
 
 #if defined(MBEDTLS_DEBUG_C)
-    mbedtls_debug_set_threshold( DEBUG_LEVEL );
+    mbedtls_debug_set_threshold(DEBUG_LEVEL);
 #endif
 
     /*
      * 0. Initialize the RNG and the session data
      */
+    mbedtls_net_init(&server_fd);
 #ifdef USE_SHARED_MEMORY
-    create_event_mmf(PointOfView_Client);
-    HANDLE hFileMap = create_mmf();
-    PVOID pView = map_mmf(hFileMap);
+    init_mmf(pContext);
 #endif // USE_SHARED_MEMORY
-    mbedtls_net_init( &server_fd );
-    mbedtls_ssl_init( &ssl );
-    mbedtls_ssl_config_init( &conf );
-    mbedtls_ctr_drbg_init( &ctr_drbg );
+    mbedtls_ssl_init(&ssl);
+    mbedtls_ssl_config_init(&conf);
+    mbedtls_ctr_drbg_init(&ctr_drbg);
 
-    mbedtls_printf( "\n  . Seeding the random number generator..." );
-    fflush( stdout );
+    mbedtls_printf("\n  . Seeding the random number generator...");
+    fflush(stdout);
 
-    mbedtls_entropy_init( &entropy );
-    if( ( ret = mbedtls_ctr_drbg_seed( &ctr_drbg, mbedtls_entropy_func, &entropy,
-                               (const unsigned char *) pers,
-                               strlen( pers ) ) ) != 0 )
+    mbedtls_entropy_init(&entropy);
+    if ((ret = mbedtls_ctr_drbg_seed(&ctr_drbg, mbedtls_entropy_func, &entropy,
+        (const unsigned char*)pers,
+        strlen(pers))) != 0)
     {
-        mbedtls_printf( " failed\n  ! mbedtls_ctr_drbg_seed returned %d\n", ret );
+        mbedtls_printf(" failed\n  ! mbedtls_ctr_drbg_seed returned %d\n", ret);
         goto exit;
     }
 
-    mbedtls_printf( " ok\n" );
+    mbedtls_printf(" ok\n");
 
     /*
      * 1. Start the connection
      */
-    mbedtls_printf( "  . Connecting to udp/%s/%s...", SERVER_NAME, SERVER_PORT );
-    fflush( stdout );
-#ifndef USE_SHARED_MEMORY
-    if( ( ret = mbedtls_net_connect( &server_fd, SERVER_ADDR,
-                                         SERVER_PORT, MBEDTLS_NET_PROTO_UDP ) ) != 0 )
+    mbedtls_printf("  . Connecting to udp/%s/%s...", SERVER_NAME, SERVER_PORT);
+    fflush(stdout);
+#if defined(USE_NET_SOCKETS)
+    if ((ret = mbedtls_net_connect(&server_fd, SERVER_ADDR,
+        SERVER_PORT, MBEDTLS_NET_PROTO_UDP)) != 0)
     {
-        mbedtls_printf( " failed\n  ! mbedtls_net_connect returned %d\n\n", ret );
+        mbedtls_printf(" failed\n  ! mbedtls_net_connect returned %d\n\n", ret);
         goto exit;
     }
-#else USE_SHARED_MEMORY
-    connect_mmf();
-#endif // USE_SHARED_MEMORY
+#elif defined(USE_SHARED_MEMORY)
+
+    if (!connect_mmf(pContext))
+    {
+        mbedtls_printf(" failed\n  ! connect_mmf returned %d\n\n", ret);
+        goto exit;
+    }
+#endif
+
     mbedtls_printf( " ok\n" );
 
     /*
@@ -224,13 +229,13 @@ int main( int argc, char *argv[] )
         mbedtls_printf( " failed\n  ! mbedtls_ssl_set_hostname returned %d\n\n", ret );
         goto exit;
     }
-#ifdef USE_SHARED_MEMORY
-    mbedtls_ssl_set_bio( &ssl, &server_fd,
-                         mbedtls_net_send_mmf, mbedtls_net_recv_mmf, mbedtls_net_recv_timeout_mmf);
-#else
+#if defined(USE_NET_SOCKETS)
     mbedtls_ssl_set_bio(&ssl, &server_fd,
         mbedtls_net_send, mbedtls_net_recv, mbedtls_net_recv_timeout);
-#endif // USE_SHARED_MEMORY
+#elif defined(USE_SHARED_MEMORY)
+    mbedtls_ssl_set_bio(&ssl, &server_fd,
+        mbedtls_net_send_mmf, mbedtls_net_recv_mmf, mbedtls_net_recv_timeout_mmf);
+#endif
 
     mbedtls_ssl_set_timer_cb( &ssl, &timer, mbedtls_timing_set_delay,
                                             mbedtls_timing_get_delay );
@@ -326,7 +331,7 @@ close_notify:
     while( ret == MBEDTLS_ERR_SSL_WANT_WRITE );
     ret = 0;
 #ifdef USE_SHARED_MEMORY
-    close_connection_mmf();
+    close_connection_mmf(pContext);
 #endif // USE_SHARED_MEMORY
     mbedtls_printf( " done\n" );
 
@@ -343,11 +348,12 @@ exit:
         mbedtls_printf( "Last error was: %d - %s\n\n", ret, error_buf );
     }
 #endif
-#ifdef USE_SHARED_MEMORY    
-    unmap_mmf(pView);
-    close_mmf(hFileMap);
-#endif // USE_SHARED_MEMORY
-    mbedtls_net_free( &server_fd );
+
+#if defined(USE_NET_SOCKETS)
+    mbedtls_net_free(&server_fd);
+#elif defined(USE_SHARED_MEMORY)
+    free_mmf(pContext);
+#endif
 
     mbedtls_ssl_free( &ssl );
     mbedtls_ssl_config_free( &conf );
