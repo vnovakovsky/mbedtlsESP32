@@ -419,7 +419,11 @@ close_notify:
                  // - otherwise server would change session password earlier then mbedtls_ssl_close_notify happens
 
     /* No error checking, the connection might be closed already */
+#if defined(USE_NAMED_PIPE)
+    // Named pipes in current config are blocked on WriteFile until data are not read
+    // therefore we need to consume close notify request
     ret = mbedtls_ssl_read(&ssl, buf, len);
+#endif
     do ret = mbedtls_ssl_close_notify( &ssl );
     while( ret == MBEDTLS_ERR_SSL_WANT_WRITE );
     ret = 0;

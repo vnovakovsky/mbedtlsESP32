@@ -334,11 +334,15 @@ close_notify:
     /* No error checking, the connection might be closed already */
     do ret = mbedtls_ssl_close_notify( &ssl );
     while( ret == MBEDTLS_ERR_SSL_WANT_WRITE );
+#if defined(USE_NAMED_PIPE)
+    // Named pipes in current config are blocked on WriteFile until data are not read
+    // therefore we need to consume close notify request
     ret = mbedtls_ssl_read(&ssl, buf, len);
-    ret = 0;
+#endif // USE_NAMED_PIPE
 #ifdef USE_SHARED_MEMORY
     close_connection_mmf();
 #endif // USE_SHARED_MEMORY
+    ret = 0;
     mbedtls_printf( " done\n" );
 
     /*
