@@ -88,10 +88,6 @@ int main( void )
 #ifdef USE_SHARED_MEMORY
 #include "mmf_communication.h"
 #endif // USE_SHARED_MEMORY
-#ifdef USE_NAMED_PIPE
-#include <windows.h>
-#include "named_pipe_communication.h"
-#endif // USE_NAMED_PIPE
 
 #define READ_TIMEOUT_MS 100000   /* 5 seconds */
 #define DEBUG_LEVEL 5
@@ -133,7 +129,7 @@ int main(int argc, char* argv[])
 	
     int ret, len;
     mbedtls_net_context listen_fd, client_fd;
-    unsigned char buf[1024 * 10];
+    unsigned char buf[1024];
     const char *pers = "dtls_server";
     unsigned char client_ip[16] = { 0 };
     size_t cliip_len;
@@ -146,11 +142,10 @@ int main(int argc, char* argv[])
 #if defined(MBEDTLS_SSL_CACHE_C)
     mbedtls_ssl_cache_context cache;
 #endif
-#ifdef USE_NAMED_PIPE
-    //REQUEST Request;
-    //RESPONSE Response;
-    
-
+#ifdef USE_SHARED_MEMORY
+    create_event_mmf(PointOfView_Server);
+    HANDLE hFileMap = create_mmf();
+    PVOID pView = map_mmf(hFileMap);
 #endif // USE_SHARED_MEMORY
     mbedtls_net_init( &listen_fd );
     mbedtls_net_init( &client_fd );
@@ -267,31 +262,20 @@ reset:
      */
     printf( "  . Waiting for a remote connection ..." );
     fflush( stdout );
-#if defined(USE_NET_SOCKETS)
+#ifndef USE_SHARED_MEMORY
     if( ( ret = mbedtls_net_accept( &listen_fd, &client_fd,
                     client_ip, sizeof( client_ip ), &cliip_len ) ) != 0 )
     {
         printf( " failed\n  ! mbedtls_net_accept returned %d\n\n", ret );
         goto exit;
     }
-#elif defined(USE_SHARED_MEMORY)
+#else
+
     accept_connection_mmf(); // simulates blocking call( accept )
 
     cliip_len = 1;
     client_ip[0] = 1; // dummy value for shared memory implementation - varified for NULL inside library
-#elif defined (USE_NAMED_PIPE)
-    cliip_len = 1;
-    client_ip[0] = 1; // dummy value for shared memory implementation - varified for NULL inside library
-    if ((ret = mbedtls_net_accept(&listen_fd, &client_fd,
-        client_ip, sizeof(client_ip), &cliip_len)) != 0)
-    {
-        printf(" failed\n  ! mbedtls_net_accept returned %d\n\n", ret);
-        goto exit;
-    }
-    client_fd = listen_fd;
-    //BOOL f = ConnectNamedPipe(hNp, NULL);
-    //printf("ConnectNamedPipe finished: %d\n", f);
-#endif // USE_*
+#endif // USE_SHARED_MEMORY
     /* For HelloVerifyRequest cookies */
     if( ( ret = mbedtls_ssl_set_client_transport_id( &ssl,
                     client_ip, cliip_len ) ) != 0 )
@@ -300,15 +284,13 @@ reset:
                 "mbedtls_ssl_set_client_transport_id() returned -0x%x\n\n", (unsigned int) -ret );
         goto exit;
     }
-#if defined(USE_SHARED_MEMORY)
+#ifdef USE_SHARED_MEMORY
     mbedtls_ssl_set_bio( &ssl, &client_fd,
                          mbedtls_net_send_mmf, mbedtls_net_recv_mmf, mbedtls_net_recv_timeout_mmf);
-#elif defined(USE_NAMED_PIPE)
+#else
     mbedtls_ssl_set_bio(&ssl, &client_fd,
-        mbedtls_net_send_pipe, mbedtls_net_recv_pipe, mbedtls_net_recv_timeout_pipe);
-#elif defined(USE_NAMED_PIPE)
-
-#endif // USE_*
+        mbedtls_net_send, mbedtls_net_recv, mbedtls_net_recv_timeout);
+#endif // USE_SHARED_MEMORY
     printf( " ok\n" );
 
     /*
@@ -414,11 +396,10 @@ reset:
      */
 close_notify:
     printf( "  . Closing the connection..." );
-    //Sleep(5000); // wait untill client will call mbedtls_ssl_close_notify (with old credentials)
+    Sleep(5000); // wait untill client will call mbedtls_ssl_close_notify (with old credentials)
                  // - otherwise server would change session password earlier then mbedtls_ssl_close_notify happens
 
     /* No error checking, the connection might be closed already */
-    ret = mbedtls_ssl_read(&ssl, buf, len);
     do ret = mbedtls_ssl_close_notify( &ssl );
     while( ret == MBEDTLS_ERR_SSL_WANT_WRITE );
     ret = 0;
@@ -426,16 +407,6 @@ close_notify:
 #ifdef USE_SHARED_MEMORY
     close_connection_mmf();
 #endif //USE_SHARED_MEMORY
-
-    FlushFileBuffers(listen_fd.fd);
-    DisconnectNamedPipe(listen_fd.fd);
-    CloseHandle(listen_fd.fd);
-
-    if ((ret = mbedtls_net_bind(&listen_fd, BIND_IP, "4433", MBEDTLS_NET_PROTO_UDP)) != 0)
-    {
-        printf(" failed\n  ! mbedtls_net_bind returned %d\n\n", ret);
-        goto exit;
-    }
 
     printf( " done\n" );
 

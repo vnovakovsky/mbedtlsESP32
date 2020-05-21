@@ -150,9 +150,7 @@ int mbedtls_net_connect( mbedtls_net_context *ctx, const char *host,
 {
     int ret = MBEDTLS_ERR_ERROR_CORRUPTION_DETECTED;
     struct addrinfo hints, *addr_list, *cur;
-#if defined(USE_SHARED_MEMORY) || defined(USE_NAMED_PIPE)
-    return 0;
-#endif
+
     if( ( ret = net_prepare() ) != 0 )
         return( ret );
 
@@ -192,8 +190,6 @@ int mbedtls_net_connect( mbedtls_net_context *ctx, const char *host,
     return( ret );
 }
 
-int mbedtls_net_bind_pipe(mbedtls_net_context* ctx/*, const char* bind_ip, const char* port, int proto*/);
-
 /*
  * Create a listening socket on bind_ip:port
  */
@@ -201,9 +197,6 @@ int mbedtls_net_bind( mbedtls_net_context *ctx, const char *bind_ip, const char 
 {
     int n, ret;
     struct addrinfo hints, *addr_list, *cur;
-#if defined(USE_SHARED_MEMORY) || defined(USE_NAMED_PIPE)
-    return 0;
-#endif
 
     if( ( ret = net_prepare() ) != 0 )
         return( ret );
@@ -314,10 +307,6 @@ static int net_would_block( const mbedtls_net_context *ctx )
 }
 #endif /* ( _WIN32 || _WIN32_WCE ) && !EFIX64 && !EFI32 */
 
-int mbedtls_net_accept_pipe(mbedtls_net_context* bind_ctx
-    /*mbedtls_net_context* client_ctx,
-    void* client_ip, size_t buf_size, size_t* ip_len*/);
-
 /*
  * Accept a connection from a remote client
  */
@@ -327,10 +316,6 @@ int mbedtls_net_accept( mbedtls_net_context *bind_ctx,
 {
     int ret = MBEDTLS_ERR_ERROR_CORRUPTION_DETECTED;
     int type;
-
-#if defined(USE_SHARED_MEMORY) || defined(USE_NAMED_PIPE)
-    return 0;
-#endif
 
     struct sockaddr_storage client_addr;
 
@@ -687,6 +672,9 @@ void mbedtls_net_free( mbedtls_net_context *ctx )
 {
     if( ctx->fd == -1 )
         return;
+
+    shutdown( ctx->fd, 2 );
+    close( ctx->fd );
 
     ctx->fd = -1;
 }

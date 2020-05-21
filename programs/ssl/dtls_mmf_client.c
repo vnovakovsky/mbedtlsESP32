@@ -63,12 +63,8 @@ int main( void )
 #include "mbedtls/timing.h"
 
 #ifdef USE_SHARED_MEMORY
-#include <windows.h>
+#include "mmf_communication.h"
 #endif //USE_SHARED_MEMORY
-#ifdef USE_NAMED_PIPE
-#include <windows.h>
-#include "named_pipe_communication.h"
-#endif // USE_NAMED_PIPE
 
 /* Uncomment out the following line to default to IPv4 and disable IPv6 */
 //#define FORCE_IPV4
@@ -154,12 +150,9 @@ int main( int argc, char *argv[] )
      * 0. Initialize the RNG and the session data
      */
 #ifdef USE_SHARED_MEMORY
-    
-
-    
-
-    
-
+    create_event_mmf(PointOfView_Client);
+    HANDLE hFileMap = create_mmf();
+    PVOID pView = map_mmf(hFileMap);
 #endif // USE_SHARED_MEMORY
     mbedtls_net_init( &server_fd );
     mbedtls_ssl_init( &ssl );
@@ -234,11 +227,6 @@ int main( int argc, char *argv[] )
 #ifdef USE_SHARED_MEMORY
     mbedtls_ssl_set_bio( &ssl, &server_fd,
                          mbedtls_net_send_mmf, mbedtls_net_recv_mmf, mbedtls_net_recv_timeout_mmf);
-
-#elif defined(USE_NAMED_PIPE)
-    mbedtls_ssl_set_bio(&ssl, &server_fd,
-        mbedtls_net_send_pipe, mbedtls_net_recv_pipe, mbedtls_net_recv_timeout_pipe);
-
 #else
     mbedtls_ssl_set_bio(&ssl, &server_fd,
         mbedtls_net_send, mbedtls_net_recv, mbedtls_net_recv_timeout);
@@ -336,7 +324,6 @@ close_notify:
     /* No error checking, the connection might be closed already */
     do ret = mbedtls_ssl_close_notify( &ssl );
     while( ret == MBEDTLS_ERR_SSL_WANT_WRITE );
-    ret = mbedtls_ssl_read(&ssl, buf, len);
     ret = 0;
 #ifdef USE_SHARED_MEMORY
     close_connection_mmf();
@@ -360,11 +347,6 @@ exit:
     unmap_mmf(pView);
     close_mmf(hFileMap);
 #endif // USE_SHARED_MEMORY
-    FlushFileBuffers(server_fd.fd);
-    //DisconnectNamedPipe(server_fd.fd);
-    CloseHandle(server_fd.fd);
-    printf("!!!DisconnectNamedPipe:\n");
-    //DisconnectNamedPipe(server_fd.fd);
     mbedtls_net_free( &server_fd );
 
     mbedtls_ssl_free( &ssl );
