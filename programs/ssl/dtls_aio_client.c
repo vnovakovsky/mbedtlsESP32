@@ -64,6 +64,7 @@ int main( void )
 
 #ifdef USE_SHARED_MEMORY
 #include <windows.h>
+#include "mmf_communication.h"
 #endif //USE_SHARED_MEMORY
 #ifdef USE_NAMED_PIPE
 #include <windows.h>
@@ -149,6 +150,13 @@ int main( int argc, char *argv[] )
 #if defined(MBEDTLS_DEBUG_C)
     mbedtls_debug_set_threshold( DEBUG_LEVEL );
 #endif
+
+#ifdef USE_SHARED_MEMORY
+    create_event_mmf(PointOfView_Client);
+    HANDLE hFileMap = create_mmf();
+    PVOID pView = map_mmf(hFileMap);
+
+#endif // USE_SHARED_MEMORY
 
     /*
      * 0. Initialize the RNG and the session data

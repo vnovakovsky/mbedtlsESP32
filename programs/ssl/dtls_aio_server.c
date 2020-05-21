@@ -169,17 +169,24 @@ int main(int argc, char* argv[])
 
 #if defined(USE_NET_SOCKETS)
     ret = mbedtls_net_bind(&listen_fd, BIND_IP, "4433", MBEDTLS_NET_PROTO_UDP);
-#elif defined(USE_SHARED_MEMORY)
-
-#elif defined(USE_NAMED_PIPE)
-    ret = mbedtls_net_bind_pipe(pContext, SERVER_PIPE);
-#endif
-
-    if( ret != 0 )
+    if (ret != 0)
     {
-        printf( " failed\n  ! mbedtls_net_bind returned %d\n\n", ret );
+        printf(" failed\n  ! mbedtls_net_bind returned %d\n\n", ret);
         goto exit;
     }
+#elif defined(USE_SHARED_MEMORY)
+    create_event_mmf(PointOfView_Server);
+    HANDLE hFileMap = create_mmf();
+
+    PVOID pView = map_mmf(hFileMap);
+#elif defined(USE_NAMED_PIPE)
+    ret = mbedtls_net_bind_pipe(pContext, SERVER_PIPE);
+    if (ret != 0)
+    {
+        printf(" failed\n  ! mbedtls_net_bind_pipe returned %d\n\n", ret);
+        goto exit;
+    }
+#endif 
 
     printf( " ok\n" );
 
