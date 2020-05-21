@@ -275,6 +275,16 @@ void close_connection_mmf()
         printf("ResetEvent failed (%d)\n", GetLastError());
         return;
     }
+    if (!ResetEvent(ghSignalAboutEvent))
+    {
+        printf("ResetEvent failed (%d)\n", GetLastError());
+        return;
+    }
+    if (!ResetEvent(ghWaitForEvent))
+    {
+        printf("ResetEvent failed (%d)\n", GetLastError());
+        return;
+    }
     printf("!!!!!!!!!!! ResetEvent ghConnectedEvent - connection is closed\n");
 }
 
