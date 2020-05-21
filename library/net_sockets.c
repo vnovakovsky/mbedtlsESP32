@@ -109,7 +109,7 @@ static int wsa_init_done = 0;
 #include <time.h>
 
 #include <stdint.h>
-
+#ifdef USE_NET_SOCKETS
 /*
  * Prepare for using the sockets interface
  */
@@ -686,3 +686,4 @@ void mbedtls_net_free( mbedtls_net_context *ctx )
 }
 
 #endif /* MBEDTLS_NET_C */
+#endif // USE_NET_SOCKETS

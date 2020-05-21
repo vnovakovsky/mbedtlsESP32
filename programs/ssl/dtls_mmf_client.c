@@ -100,7 +100,9 @@ int main(int argc, char* argv[])
 {
     int ret, len;
     mbedtls_net_context server_fd;
+#if defined(USE_SHARED_MEMORY) || defined(USE_NAMED_PIPE)
     mbedtls_net_context* pContext = &server_fd;
+#endif
     uint32_t flags;
     unsigned char buf[1024];
     const char* pers = "dtls_client";
@@ -150,10 +152,13 @@ int main(int argc, char* argv[])
     /*
      * 0. Initialize the RNG and the session data
      */
+#if defined(USE_NET_SOCKETS)
     mbedtls_net_init(&server_fd);
-#ifdef USE_SHARED_MEMORY
+#elif defined(USE_SHARED_MEMORY)
     init_mmf(pContext);
-#endif // USE_SHARED_MEMORY
+#elif defined(USE_NAMED_PIPE)
+
+#endif
     mbedtls_ssl_init(&ssl);
     mbedtls_ssl_config_init(&conf);
     mbedtls_ctr_drbg_init(&ctr_drbg);

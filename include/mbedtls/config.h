@@ -3692,4 +3692,5 @@
 
 #endif /* MBEDTLS_CONFIG_H */
 
+//#define USE_NET_SOCKETS
 #define USE_SHARED_MEMORY

@@ -6,6 +6,7 @@
 #include <assert.h>
 #include <stdio.h>
 
+#ifdef USE_SHARED_MEMORY
 
 static int read_mmf(mbedtls_net_context* pContext, void* buf);
 static BOOL write_mmf(mbedtls_net_context* pContext, const unsigned char* buf, int nbytes);
@@ -379,3 +380,5 @@ void hexDump(char* desc, void* addr, int len)
     // And print the final ASCII bit.
     printf("  %s\n", buff);
 }
+
+#endif // USE_SHARED_MEMORY
