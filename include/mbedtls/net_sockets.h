@@ -96,7 +96,7 @@ typedef struct mbedtls_net_context
     void* hSignalAboutEvent;
     void* hWaitForEvent;
 #elif defined(USE_NAMED_PIPE)
-
+    void* hNamedPipe;
 #endif
 }
 mbedtls_net_context;

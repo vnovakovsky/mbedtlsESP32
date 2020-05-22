@@ -2,6 +2,7 @@
 #include "mbedtls/error.h"          // MBEDTLS_ERR_ERROR_CORRUPTION_DETECTED
 #include "mbedtls/net_sockets.h"    // MBEDTLS_ERR_NET_...
 
+#ifdef USE_NAMED_PIPE
 
 int mbedtls_net_connect_pipe(mbedtls_net_context* context, const char* pipe_name)
 {
@@ -30,14 +31,14 @@ int mbedtls_net_connect_pipe(mbedtls_net_context* context, const char* pipe_name
             return -1;
         }
         // All pipe instances are busy, so wait for 20 seconds. 
-        if (!WaitNamedPipe(pipe_name, 60000))
+        if (!WaitNamedPipeA(pipe_name, 60000))
         {
             printf("Could not open pipe: 20 second wait timed out.");
             return -1;
         }
     }
 
-    context->fd = hNamedPipe;
+    context->hNamedPipe = hNamedPipe;
     DWORD NpMode = PIPE_READMODE_MESSAGE | PIPE_WAIT;
     if (!SetNamedPipeHandleState(hNamedPipe, &NpMode, NULL, NULL))
     {
@@ -61,7 +62,7 @@ int mbedtls_net_bind_pipe(mbedtls_net_context* context, const char* pipe_name)
         printf("Failure to open named pipe.");
         return INVALID_HANDLE_VALUE;
     }
-    context->fd = (int) hNp;
+    context->hNamedPipe = hNp;
     return 0;
 }
 
@@ -69,7 +70,7 @@ int mbedtls_net_bind_pipe(mbedtls_net_context* context, const char* pipe_name)
 int mbedtls_net_accept_pipe(mbedtls_net_context* context)
 {
     printf("################ ACCEPT. ConnectNamedPipe\n");
-    HANDLE hNp = context->fd;
+    HANDLE hNp = context->hNamedPipe;
     BOOL is_connected = ConnectNamedPipe(hNp, NULL) ?
         TRUE : (GetLastError() == ERROR_PIPE_CONNECTED);
     if (is_connected)
@@ -90,13 +91,13 @@ int mbedtls_net_accept_pipe(mbedtls_net_context* context)
 */
 int mbedtls_net_recv_pipe(void* ctx, unsigned char* buf, size_t len)
 {
-    int fd = ((mbedtls_net_context*)ctx)->fd;
+    HANDLE hNamedPipe = ((mbedtls_net_context*)ctx)->hNamedPipe;
 
-    if (fd < 0)
+    if (hNamedPipe < 0)
         return(MBEDTLS_ERR_NET_INVALID_CONTEXT);
 
     DWORD n_received = 0;
-    HANDLE hNp = ((mbedtls_net_context*)ctx)->fd;
+    HANDLE hNp = ((mbedtls_net_context*)ctx)->hNamedPipe;
     BOOL is_success = ReadFile(hNp, buf, len, &n_received, NULL);
     if (!is_success)
     {
@@ -119,12 +120,12 @@ int mbedtls_net_recv_timeout_pipe(void* ctx, unsigned char* buf,
  */
 int mbedtls_net_send_pipe(void* ctx, const unsigned char* buf, size_t len)
 {
-    int fd = ((mbedtls_net_context*)ctx)->fd;
+    HANDLE hNamedPipe = ((mbedtls_net_context*)ctx)->hNamedPipe;
 
-    if (fd < 0)
+    if (hNamedPipe < 0)
         return(MBEDTLS_ERR_NET_INVALID_CONTEXT);
 
-    HANDLE hNp = ((mbedtls_net_context*)ctx)->fd;
+    HANDLE hNp = ((mbedtls_net_context*)ctx)->hNamedPipe;
     DWORD bytes_written = 0;
     BOOL is_success = WriteFile(hNp, buf, len, &bytes_written, NULL);
 
@@ -138,6 +139,8 @@ int mbedtls_net_send_pipe(void* ctx, const unsigned char* buf, size_t len)
 
 void mbedtls_net_free_pipe(mbedtls_net_context* ctx)
 {
-    HANDLE hPipe = ctx->fd;
+    HANDLE hPipe = ctx->hNamedPipe;
     CloseHandle(hPipe);
 }
+
+#endif //USE_NAMED_PIPE

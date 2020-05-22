@@ -120,7 +120,6 @@ int main( int argc, char *argv[] )
     mbedtls_ctr_drbg_context ctr_drbg;
     mbedtls_ssl_context ssl;
     mbedtls_ssl_config conf;
-    mbedtls_x509_crt cacert;
     mbedtls_timing_delay_context timer;
     int     mCipherSuites[2];
     mCipherSuites[0] = MBEDTLS_TLS_ECJPAKE_WITH_AES_128_CCM_8;
@@ -380,8 +379,8 @@ exit:
 #elif defined(USE_SHARED_MEMORY)
     free_mmf(pContext);
 #elif defined(USE_NAMED_PIPE)
-    FlushFileBuffers(server_fd.fd);
-    CloseHandle(server_fd.fd);
+    FlushFileBuffers(server_fd.hNamedPipe);
+    CloseHandle(server_fd.hNamedPipe);
     printf("!!!DisconnectNamedPipe:\n");
 #endif
 

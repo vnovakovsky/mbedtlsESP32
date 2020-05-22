@@ -456,9 +456,9 @@ close_notify:
     assert(close_connection_mmf(pContext));
 
 #elif defined(USE_NAMED_PIPE)
-    FlushFileBuffers(client_fd.fd);
-    DisconnectNamedPipe(client_fd.fd);
-    CloseHandle(client_fd.fd);
+    FlushFileBuffers(client_fd.hNamedPipe);
+    DisconnectNamedPipe(client_fd.hNamedPipe);
+    CloseHandle(client_fd.hNamedPipe);
 if ((ret = mbedtls_net_bind_pipe(pContext, SERVER_PIPE)) != 0)
 {
     printf(" failed\n  ! mbedtls_net_bind_pipe returned %d\n\n", ret);
