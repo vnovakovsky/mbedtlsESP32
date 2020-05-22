@@ -3,25 +3,9 @@
 
 #include "mbedtls\net_sockets.h""
 
-#define MAX_RQRS_LEN 0x1000
 
-typedef struct {
-	DWORD32 RqLen;	/* Total length of request, not including this field */
-	CHAR Command;
-	BYTE Record[MAX_RQRS_LEN];
-} REQUEST;
-
-typedef struct {
-	DWORD32 RsLen;	/* Total length of response, not including this field */
-	CHAR Status;
-	BYTE Record[MAX_RQRS_LEN];
-} RESPONSE;
-
-
-#define RQ_SIZE sizeof (REQUEST)
-#define RQ_HEADER_LEN RQ_SIZE-MAX_RQRS_LEN
-#define RS_SIZE sizeof (RESPONSE)
-#define RS_HEADER_LEN RS_SIZE-MAX_RQRS_LEN
+#define SERVER_PIPE "\\\\.\\PIPE\\SERVER"
+#define MAX_CLIENTS  1 /* Maximum number of clients for named pipe*/
 
 int mbedtls_net_connect_pipe(mbedtls_net_context* context, const char* pipe_name);
 

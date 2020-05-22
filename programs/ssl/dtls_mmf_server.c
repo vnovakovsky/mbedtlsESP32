@@ -26,6 +26,10 @@
 #include MBEDTLS_CONFIG_FILE
 #endif
 
+#if !(defined(USE_NET_SOCKETS) || defined(USE_SHARED_MEMORY)) || defined (USE_NAMED_PIPE)
+#error dtls_mmf_server requires USE_NET_SOCKETS or USE_SHARED_MEMORY only
+#endif
+
 #if defined(MBEDTLS_PLATFORM_C)
 #include "mbedtls/platform.h"
 #else
@@ -135,7 +139,7 @@ int main(int argc, char* argv[])
 #elif defined(USE_SHARED_MEMORY) || defined(USE_NAMED_PIPE)
     mbedtls_net_context* pContext = &client_fd;
 #endif
-    unsigned char buf[1024];
+    unsigned char buf[1024 * 10];
     const char *pers = "dtls_server";
     unsigned char client_ip[16] = { 0 };
     size_t cliip_len;

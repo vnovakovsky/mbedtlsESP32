@@ -25,6 +25,10 @@
 #include MBEDTLS_CONFIG_FILE
 #endif
 
+#if !(defined(USE_NET_SOCKETS) || defined(USE_SHARED_MEMORY) || defined (USE_NAMED_PIPE))
+#error dtls_aio_client requires one and only one of aforementioned define
+#endif
+
 #if defined(MBEDTLS_PLATFORM_C)
 #include "mbedtls/platform.h"
 #else
@@ -63,7 +67,6 @@ int main( void )
 #include "mbedtls/timing.h"
 
 #ifdef USE_SHARED_MEMORY
-#include <windows.h>
 #include "mmf_communication.h"
 #endif //USE_SHARED_MEMORY
 #ifdef USE_NAMED_PIPE
@@ -105,6 +108,9 @@ int main( int argc, char *argv[] )
 {
     int ret, len;
     mbedtls_net_context server_fd;
+#if defined(USE_SHARED_MEMORY) || defined(USE_NAMED_PIPE)
+    mbedtls_net_context* pContext = &server_fd;
+#endif
     uint32_t flags;
     unsigned char buf[1024];
     const char *pers = "dtls_client";
@@ -151,18 +157,16 @@ int main( int argc, char *argv[] )
     mbedtls_debug_set_threshold( DEBUG_LEVEL );
 #endif
 
-#ifdef USE_SHARED_MEMORY
-    create_event_mmf(PointOfView_Client);
-    HANDLE hFileMap = create_mmf();
-    PVOID pView = map_mmf(hFileMap);
-
-#endif // USE_SHARED_MEMORY
-
     /*
      * 0. Initialize the RNG and the session data
      */
+#if defined(USE_NET_SOCKETS)
+    mbedtls_net_init(&server_fd);
+#elif defined(USE_SHARED_MEMORY)
+    init_mmf(pContext);
+#elif defined(USE_NAMED_PIPE)
 
-    mbedtls_net_init( &server_fd );
+#endif
     mbedtls_ssl_init( &ssl );
     mbedtls_ssl_config_init( &conf );
     mbedtls_ctr_drbg_init( &ctr_drbg );
@@ -194,7 +198,11 @@ int main( int argc, char *argv[] )
         goto exit;
     }
 #elif defined(USE_SHARED_MEMORY)
-    connect_mmf();
+    if (!connect_mmf(pContext))
+    {
+        mbedtls_printf(" failed\n  ! connect_mmf returned %d\n\n", ret);
+        goto exit;
+    }
 #elif defined(USE_NAMED_PIPE)
     if ((ret = mbedtls_net_connect_pipe(&server_fd, SERVER_PIPE)))
     {
@@ -348,7 +356,7 @@ close_notify:
     ret = mbedtls_ssl_read(&ssl, buf, len);
 #endif // USE_NAMED_PIPE
 #ifdef USE_SHARED_MEMORY
-    close_connection_mmf();
+    close_connection_mmf(pContext);
 #endif // USE_SHARED_MEMORY
     ret = 0;
     mbedtls_printf( " done\n" );
@@ -370,8 +378,7 @@ exit:
 #if defined(USE_NET_SOCKETS)
     mbedtls_net_free(&server_fd);
 #elif defined(USE_SHARED_MEMORY)
-    unmap_mmf(pView);
-    close_mmf(hFileMap);
+    free_mmf(pContext);
 #elif defined(USE_NAMED_PIPE)
     FlushFileBuffers(server_fd.fd);
     CloseHandle(server_fd.fd);

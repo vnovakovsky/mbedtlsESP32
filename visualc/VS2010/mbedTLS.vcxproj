@@ -92,6 +92,7 @@
       <AdditionalIncludeDirectories>
 ../../include;../../3rdparty/everest/include/;../../3rdparty/everest/include/everest;../../3rdparty/everest/include/everest/vs2010;../../3rdparty/everest/include/everest/kremlib      </AdditionalIncludeDirectories>
       <CompileAs>CompileAsC</CompileAs>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -295,7 +296,6 @@
     <ClCompile Include="..\..\library\md4.c" />
     <ClCompile Include="..\..\library\md5.c" />
     <ClCompile Include="..\..\library\memory_buffer_alloc.c" />
-    <ClCompile Include="..\..\library\net_sockets.c" />
     <ClCompile Include="..\..\library\nist_kw.c" />
     <ClCompile Include="..\..\library\oid.c" />
     <ClCompile Include="..\..\library\padlock.c" />

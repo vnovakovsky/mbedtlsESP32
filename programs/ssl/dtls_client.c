@@ -25,6 +25,10 @@
 #include MBEDTLS_CONFIG_FILE
 #endif
 
+#if !defined(USE_NET_SOCKETS) || defined(USE_SHARED_MEMORY) || defined (USE_NAMED_PIPE)
+#error dtls_client requires USE_NET_SOCKETS only
+#endif // USE_NET_SOCKETS
+
 #if defined(MBEDTLS_PLATFORM_C)
 #include "mbedtls/platform.h"
 #else
