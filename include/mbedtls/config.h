@@ -3694,3 +3694,7 @@
 
 //#define USE_NET_SOCKETS
 #define USE_SHARED_MEMORY
+//#define USE_NAMED_PIPE
+#define SERVER_PIPE "\\\\.\\PIPE\\SERVER"
+#define MAX_CLIENTS  1 /* Maximum number of clients */
+
