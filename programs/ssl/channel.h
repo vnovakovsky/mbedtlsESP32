@@ -2,7 +2,7 @@
 #include "mbedtls/net_sockets.h"
 
 typedef int channel_callback_t(mbedtls_net_context* pContext);
-#define USE_NET_SOCKETS
+//#define USE_NET_SOCKETS
 typedef struct tag_channel_address
 {
 #if defined(USE_NET_SOCKETS)

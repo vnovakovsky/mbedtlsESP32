@@ -70,7 +70,7 @@ int main( void )
     return( 0 );
 }
 #else
-#define USE_NET_SOCKETS
+//#define USE_NET_SOCKETS
 #if defined(_WIN32)
 #include <windows.h>
 #endif
@@ -138,11 +138,8 @@ int main(int argc, char* argv[])
 	
     int ret, len;
     mbedtls_net_context client_fd;
-#if defined(USE_NET_SOCKETS)
-    mbedtls_net_context listen_fd;
-#elif defined(USE_SHARED_MEMORY) || defined(USE_NAMED_PIPE)
-    mbedtls_net_context* pContext = &client_fd;
-#endif
+    mbedtls_net_context listen_fd; // used by sockets
+    mbedtls_net_context* pContext = &client_fd; // more correct name for shared memory and pipes
     unsigned char buf[1024 * 10];
     const char *pers = "dtls_server";
     unsigned char client_ip[16] = { 0 };
@@ -453,7 +450,7 @@ close_notify:
 #elif defined(USE_NAMED_PIPE)
     channel_close(pContext);
 
-    if ((ret = channel_setup(&pContext, SERVER_PIPE)) != 0)
+    if ((ret = channel_setup(&pContext, address)) != 0)
     {
         printf(" failed\n  ! mbedtls_net_bind_pipe returned %d\n\n", ret);
         goto exit;

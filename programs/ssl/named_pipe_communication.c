@@ -14,17 +14,17 @@ int channel_init(mbedtls_net_context* pContext)
 
 int channel_connect(mbedtls_net_context* pContext, channel_address_t address)
 {
-    return mbedtls_net_connect_pipe
+    return mbedtls_net_connect_pipe(pContext, address.pipe_name);
 }
 
 
 int channel_setup(mbedtls_net_context* pContext, channel_address_t address)
 {
-    return mbedtls_net_bind_pipe(pContext, SERVER_PIPE);
+    return mbedtls_net_bind_pipe(pContext, address.pipe_name);
 }
 
 
-int channel_accept(mbedtls_net_context* dummy, mbedtls_net_context* pContext, channel_address_t dummy)
+int channel_accept(mbedtls_net_context* dummy_context, mbedtls_net_context* pContext, channel_address_t dummy)
 {
     return mbedtls_net_accept_pipe(pContext);
 }
@@ -32,12 +32,15 @@ int channel_accept(mbedtls_net_context* dummy, mbedtls_net_context* pContext, ch
 
 int channel_close(mbedtls_net_context* pContext)
 {
-    FlushFileBuffers(pContext.hNamedPipe);
-    DisconnectNamedPipe(pContext.hNamedPipe);
-    CloseHandle(pContext.hNamedPipe);
+    FlushFileBuffers(pContext->hNamedPipe);
+    DisconnectNamedPipe(pContext->hNamedPipe);
+    CloseHandle(pContext->hNamedPipe);
 }
 
-int channel_free(mbedtls_net_context* pContext);
+int channel_free(mbedtls_net_context* pContext)
+{
+    return 0;
+}
 
 int mbedtls_net_connect_pipe(mbedtls_net_context* context, const char* pipe_name)
 {

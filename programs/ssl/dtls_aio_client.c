@@ -181,32 +181,21 @@ int main( int argc, char *argv[] )
      */
     mbedtls_printf( "  . Connecting to udp/%s/%s...", SERVER_NAME, SERVER_PORT );
     fflush( stdout );
-#if defined(USE_NET_SOCKETS)
     channel_address_t address;
-
+#if defined(USE_NET_SOCKETS)
     address.bind_ip = SERVER_ADDR;
-    address.port = SERVER_PORT;
-    address.proto = MBEDTLS_NET_PROTO_UDP;
-    if ((ret = channel_connect(pContext, address)) != 0)
-    {
-        mbedtls_printf(" failed\n  ! mbedtls_net_connect returned %d\n\n", ret);
-        goto exit;
-    }
+    address.port    = SERVER_PORT;
+    address.proto   = MBEDTLS_NET_PROTO_UDP;
 #elif defined(USE_SHARED_MEMORY)
     
+#elif defined(USE_NAMED_PIPE)
+    address.pipe_name = SERVER_PIPE;
+#endif
     if ((ret = channel_connect(pContext, address)) != 0)
     {
         mbedtls_printf(" failed\n  ! mbedtls_net_connect returned %d\n\n", ret);
         goto exit;
     }
-#elif defined(USE_NAMED_PIPE)
-    
-    if ((ret = mbedtls_net_connect_pipe(&server_fd, SERVER_PIPE)))
-    {
-        mbedtls_printf(" failed\n  ! mbedtls_net_connect_pipe returned %d\n\n", ret);
-            goto exit;
-    }
-#endif
     mbedtls_printf( " ok\n" );
 
     /*

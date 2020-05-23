@@ -1,6 +1,7 @@
-#define USE_NET_SOCKETS
+//#define USE_NET_SOCKETS
 #include "channel.h"
 
+#ifdef USE_NET_SOCKETS
 
 int channel_init(mbedtls_net_context* pContext)
 {
@@ -32,3 +33,5 @@ int channel_free(mbedtls_net_context* pContext)
 {
     mbedtls_net_free(pContext);
 }
+
+#endif // USE_NET_SOCKETS

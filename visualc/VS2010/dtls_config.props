@@ -9,7 +9,7 @@
       <PreprocessorDefinitions Condition="'$(ProjectName)'=='dtls_psk_server' Or '$(ProjectName)'=='dtls_psk_client'">USE_NET_SOCKETS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(ProjectName)'=='dtls_uni_server' Or '$(ProjectName)'=='dtls_uni_client'">USE_NET_SOCKETS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(ProjectName)'=='dtls_mmf_server' Or '$(ProjectName)'=='dtls_mmf_client'">USE_SHARED_MEMORY;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PreprocessorDefinitions Condition="'$(ProjectName)'=='dtls_aio_server' Or '$(ProjectName)'=='dtls_aio_client'">USE_NET_SOCKETS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(ProjectName)'=='dtls_aio_server' Or '$(ProjectName)'=='dtls_aio_client'">USE_NAMED_PIPE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemGroup />
