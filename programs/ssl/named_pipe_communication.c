@@ -9,6 +9,7 @@
 int channel_init(mbedtls_net_context* pContext)
 {
     pContext->hNamedPipe = NULL;
+    return 0;
 }
 
 
@@ -32,9 +33,10 @@ int channel_accept(mbedtls_net_context* dummy_context, mbedtls_net_context* pCon
 
 int channel_close(mbedtls_net_context* pContext)
 {
-    FlushFileBuffers(pContext->hNamedPipe);
-    DisconnectNamedPipe(pContext->hNamedPipe);
+    BOOL ret_flush      = FlushFileBuffers(pContext->hNamedPipe);
+    BOOL ret_disconnect = DisconnectNamedPipe(pContext->hNamedPipe);
     CloseHandle(pContext->hNamedPipe);
+    return (ret_flush && ret_disconnect) ? 0 : -1;
 }
 
 int channel_free(mbedtls_net_context* pContext)
@@ -69,13 +71,13 @@ int mbedtls_net_connect_pipe(mbedtls_net_context* context, const char* pipe_name
         if (GetLastError() != ERROR_PIPE_BUSY)
         {
             printf("Could not open pipe. GLE=%d\n", GetLastError());
-            return -1;
+            return MBEDTLS_ERR_NET_CONNECT_FAILED;
         }
         // All pipe instances are busy, so wait for 20 seconds. 
         if (!WaitNamedPipeA(pipe_name, 60000))
         {
             printf("Could not open pipe: 20 second wait timed out.");
-            return -1;
+            return MBEDTLS_ERR_NET_CONNECT_FAILED;
         }
     }
 
@@ -101,7 +103,7 @@ int mbedtls_net_bind_pipe(mbedtls_net_context* context, const char* pipe_name)
     if (hNp == INVALID_HANDLE_VALUE)
     {
         printf("Failure to open named pipe.");
-        return INVALID_HANDLE_VALUE;
+        return MBEDTLS_ERR_NET_BIND_FAILED;
     }
     context->hNamedPipe = hNp;
     return 0;
@@ -123,7 +125,7 @@ int mbedtls_net_accept_pipe(mbedtls_net_context* context)
     {
         printf("ConnectNamedPipe failed. The client could not connect, so close the pipe: %d\n", is_connected);
         CloseHandle(hNp);
-        return -1;
+        return MBEDTLS_ERR_NET_ACCEPT_FAILED;
     }
 }
 
