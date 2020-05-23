@@ -39,6 +39,9 @@ int channel_close(mbedtls_net_context* pContext)
 
 int channel_free(mbedtls_net_context* pContext)
 {
+    FlushFileBuffers(pContext->hNamedPipe);
+    CloseHandle(pContext->hNamedPipe);
+    printf("!!!client initiated DisconnectNamedPipe:\n");
     return 0;
 }
 

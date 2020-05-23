@@ -181,7 +181,7 @@ int main( int argc, char *argv[] )
      */
     mbedtls_printf( "  . Connecting to udp/%s/%s...", SERVER_NAME, SERVER_PORT );
     fflush( stdout );
-    channel_address_t address;
+    channel_address_t address = { 0 };
 #if defined(USE_NET_SOCKETS)
     address.bind_ip = SERVER_ADDR;
     address.port    = SERVER_PORT;
@@ -341,9 +341,6 @@ close_notify:
     // therefore we need to consume close notify request
     ret = mbedtls_ssl_read(&ssl, buf, len);
 #endif // USE_NAMED_PIPE
-#ifdef USE_SHARED_MEMORY
-    close_connection_mmf(pContext);
-#endif // USE_SHARED_MEMORY
     ret = 0;
     mbedtls_printf( " done\n" );
 
@@ -361,16 +358,7 @@ exit:
     }
 #endif
 
-#if defined(USE_NET_SOCKETS)
-    channel_free(&server_fd);
-#elif defined(USE_SHARED_MEMORY)
-    free_mmf(pContext);
-#elif defined(USE_NAMED_PIPE)
-    FlushFileBuffers(server_fd.hNamedPipe);
-    CloseHandle(server_fd.hNamedPipe);
-    printf("!!!DisconnectNamedPipe:\n");
-#endif
-
+    channel_free(pContext);
     mbedtls_ssl_free( &ssl );
     mbedtls_ssl_config_free( &conf );
     mbedtls_ctr_drbg_free( &ctr_drbg );

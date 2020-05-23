@@ -180,7 +180,7 @@ int main(int argc, char* argv[])
      */
     printf( "  . Bind on udp/*/4433 ..." );
     fflush( stdout );
-    channel_address_t address;
+    channel_address_t address = { 0 };
 
 #if defined(USE_NET_SOCKETS)
     address.bind_ip = BIND_IP;
@@ -192,12 +192,16 @@ int main(int argc, char* argv[])
         goto exit;
 }
 #elif defined(USE_SHARED_MEMORY)
-   
+    if ((ret = channel_setup(pContext, address)) != 0)
+    {
+        printf(" failed\n  ! channel_setup returned %d\n\n", ret);
+        goto exit;
+    }
 #elif defined(USE_NAMED_PIPE)
     address.pipe_name = SERVER_PIPE;
     if ((ret = channel_setup(pContext, address)) != 0)
     {
-        printf(" failed\n  ! mbedtls_net_bind returned %d\n\n", ret);
+        printf(" failed\n  ! channel_setup returned %d\n\n", ret);
         goto exit;
     }
 #endif 
@@ -445,7 +449,7 @@ close_notify:
 
 #if defined(USE_SHARED_MEMORY)
 
-    assert(channel_close(pContext));
+    assert(0 == channel_close(pContext));
 
 #elif defined(USE_NAMED_PIPE)
     channel_close(pContext);

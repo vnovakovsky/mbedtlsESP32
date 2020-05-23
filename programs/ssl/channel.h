@@ -14,7 +14,7 @@ typedef struct tag_channel_address
 	size_t	buf_size;
 	size_t* ip_len;
 #elif defined(USE_SHARED_MEMORY)
-	
+	int dummy;
 #elif defined(USE_NAMED_PIPE)
 	const char* pipe_name;
 #endif

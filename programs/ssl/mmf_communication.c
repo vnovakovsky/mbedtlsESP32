@@ -13,7 +13,8 @@
 
 int channel_init(mbedtls_net_context* pContext)
 {
-    init_mmf(pContext)
+    init_mmf(pContext);
+    return 0;
 }
 
 
@@ -33,7 +34,7 @@ int channel_setup(mbedtls_net_context* pContext, channel_address_t address)
 }
 
 
-int channel_accept(mbedtls_net_context* pContext)
+int channel_accept(mbedtls_net_context* dummy_context, mbedtls_net_context* pContext, channel_address_t dummy)
 {
     if (accept_connection_mmf(pContext))
     {
@@ -45,7 +46,7 @@ int channel_accept(mbedtls_net_context* pContext)
 
 int channel_close(mbedtls_net_context* pContext)
 {
-    if (close_connection_mmf)
+    if (close_connection_mmf(pContext))
     {
         return 0;
     }
@@ -54,7 +55,13 @@ int channel_close(mbedtls_net_context* pContext)
 
 int channel_free(mbedtls_net_context* pContext)
 {
+    int ret = 0;
+    if (!close_connection_mmf(pContext))
+    {
+        ret = -1;
+    }
     free_mmf(pContext);
+    return ret;
 }
 
 static int read_mmf(mbedtls_net_context* pContext, void* buf);
