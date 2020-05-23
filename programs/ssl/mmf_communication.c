@@ -1,12 +1,61 @@
 #include "mbedtls/error.h"          // MBEDTLS_ERR_ERROR_CORRUPTION_DETECTED
 #include "mbedtls/net_sockets.h"    // MBEDTLS_ERR_NET_...
+//#define USE_SHARED_MEMORY
+
 #include "mmf_communication.h"
 #include <windows.h>
 
 #include <assert.h>
 #include <stdio.h>
+#include "channel.h"
 
 #ifdef USE_SHARED_MEMORY
+
+int channel_init(mbedtls_net_context* pContext)
+{
+    init_mmf(pContext)
+}
+
+
+int channel_connect(mbedtls_net_context* pContext, channel_address_t dummy)
+{
+    if (connect_mmf(pContext))
+        return 0;
+    return -1;
+}
+
+
+int channel_setup(mbedtls_net_context* pContext, channel_address_t address)
+{
+    assert(create_event_mmf(pContext, PointOfView_Server));
+    assert(create_mmf(pContext));
+    return 0;
+}
+
+
+int channel_accept(mbedtls_net_context* pContext)
+{
+    if (accept_connection_mmf(pContext))
+    {
+        return 0;
+    }
+    return -1;
+}
+
+
+int channel_close(mbedtls_net_context* pContext)
+{
+    if (close_connection_mmf)
+    {
+        return 0;
+    }
+    return -1;
+}
+
+int channel_free(mbedtls_net_context* pContext)
+{
+    free_mmf(pContext);
+}
 
 static int read_mmf(mbedtls_net_context* pContext, void* buf);
 static BOOL write_mmf(mbedtls_net_context* pContext, const unsigned char* buf, int nbytes);

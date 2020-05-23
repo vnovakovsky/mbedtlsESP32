@@ -1,8 +1,43 @@
 #include "named_pipe_communication.h"
 #include "mbedtls/error.h"          // MBEDTLS_ERR_ERROR_CORRUPTION_DETECTED
 #include "mbedtls/net_sockets.h"    // MBEDTLS_ERR_NET_...
+#include "channel.h"
+
 
 #ifdef USE_NAMED_PIPE
+
+int channel_init(mbedtls_net_context* pContext)
+{
+    pContext->hNamedPipe = NULL;
+}
+
+
+int channel_connect(mbedtls_net_context* pContext, channel_address_t address)
+{
+    return mbedtls_net_connect_pipe
+}
+
+
+int channel_setup(mbedtls_net_context* pContext, channel_address_t address)
+{
+    return mbedtls_net_bind_pipe(pContext, SERVER_PIPE);
+}
+
+
+int channel_accept(mbedtls_net_context* dummy, mbedtls_net_context* pContext, channel_address_t dummy)
+{
+    return mbedtls_net_accept_pipe(pContext);
+}
+
+
+int channel_close(mbedtls_net_context* pContext)
+{
+    FlushFileBuffers(pContext.hNamedPipe);
+    DisconnectNamedPipe(pContext.hNamedPipe);
+    CloseHandle(pContext.hNamedPipe);
+}
+
+int channel_free(mbedtls_net_context* pContext);
 
 int mbedtls_net_connect_pipe(mbedtls_net_context* context, const char* pipe_name)
 {

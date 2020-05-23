@@ -20,6 +20,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\library\net_sockets.c" />
+    <ClCompile Include="..\..\programs\ssl\channel.c" />
     <ClCompile Include="..\..\programs\ssl\dtls_aio_server.c" />
     <ClCompile Include="..\..\programs\ssl\mmf_communication.c" />
     <ClCompile Include="..\..\programs\ssl\named_pipe_communication.c" />
@@ -31,6 +32,7 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\programs\ssl\channel.h" />
     <ClInclude Include="..\..\programs\ssl\named_pipe_communication.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">

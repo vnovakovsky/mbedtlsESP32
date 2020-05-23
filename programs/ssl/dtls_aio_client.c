@@ -65,7 +65,7 @@ int main( void )
 #include "mbedtls/ctr_drbg.h"
 #include "mbedtls/error.h"
 #include "mbedtls/timing.h"
-
+#include "channel.h"
 #ifdef USE_SHARED_MEMORY
 #include "mmf_communication.h"
 #endif //USE_SHARED_MEMORY
@@ -108,9 +108,7 @@ int main( int argc, char *argv[] )
 {
     int ret, len;
     mbedtls_net_context server_fd;
-#if defined(USE_SHARED_MEMORY) || defined(USE_NAMED_PIPE)
     mbedtls_net_context* pContext = &server_fd;
-#endif
     uint32_t flags;
     unsigned char buf[1024];
     const char *pers = "dtls_client";
@@ -159,13 +157,7 @@ int main( int argc, char *argv[] )
     /*
      * 0. Initialize the RNG and the session data
      */
-#if defined(USE_NET_SOCKETS)
-    mbedtls_net_init(&server_fd);
-#elif defined(USE_SHARED_MEMORY)
-    init_mmf(pContext);
-#elif defined(USE_NAMED_PIPE)
-
-#endif
+    channel_init(pContext);
     mbedtls_ssl_init( &ssl );
     mbedtls_ssl_config_init( &conf );
     mbedtls_ctr_drbg_init( &ctr_drbg );
@@ -190,25 +182,31 @@ int main( int argc, char *argv[] )
     mbedtls_printf( "  . Connecting to udp/%s/%s...", SERVER_NAME, SERVER_PORT );
     fflush( stdout );
 #if defined(USE_NET_SOCKETS)
-    if ((ret = mbedtls_net_connect(&server_fd, SERVER_ADDR,
-        SERVER_PORT, MBEDTLS_NET_PROTO_UDP)) != 0)
+    channel_address_t address;
+
+    address.bind_ip = SERVER_ADDR;
+    address.port = SERVER_PORT;
+    address.proto = MBEDTLS_NET_PROTO_UDP;
+    if ((ret = channel_connect(pContext, address)) != 0)
     {
         mbedtls_printf(" failed\n  ! mbedtls_net_connect returned %d\n\n", ret);
         goto exit;
     }
 #elif defined(USE_SHARED_MEMORY)
-    if (!connect_mmf(pContext))
+    
+    if ((ret = channel_connect(pContext, address)) != 0)
     {
-        mbedtls_printf(" failed\n  ! connect_mmf returned %d\n\n", ret);
+        mbedtls_printf(" failed\n  ! mbedtls_net_connect returned %d\n\n", ret);
         goto exit;
     }
 #elif defined(USE_NAMED_PIPE)
+    
     if ((ret = mbedtls_net_connect_pipe(&server_fd, SERVER_PIPE)))
     {
         mbedtls_printf(" failed\n  ! mbedtls_net_connect_pipe returned %d\n\n", ret);
             goto exit;
     }
-#endif    
+#endif
     mbedtls_printf( " ok\n" );
 
     /*
@@ -375,7 +373,7 @@ exit:
 #endif
 
 #if defined(USE_NET_SOCKETS)
-    mbedtls_net_free(&server_fd);
+    channel_free(&server_fd);
 #elif defined(USE_SHARED_MEMORY)
     free_mmf(pContext);
 #elif defined(USE_NAMED_PIPE)

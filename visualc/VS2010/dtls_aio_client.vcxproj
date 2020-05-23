@@ -20,6 +20,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\library\net_sockets.c" />
+    <ClCompile Include="..\..\programs\ssl\channel.c" />
     <ClCompile Include="..\..\programs\ssl\dtls_aio_client.c" />
     <ClCompile Include="..\..\programs\ssl\mmf_communication.c" />
     <ClCompile Include="..\..\programs\ssl\named_pipe_communication.c" />
@@ -29,6 +30,9 @@
       <Project>{46cf2d25-6a36-4189-b59c-e4815388e554}</Project>
       <LinkLibraryDependencies>true</LinkLibraryDependencies>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\programs\ssl\channel.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{BFE89EAA-D98B-34E1-C5A4-4080F6FFE323}</ProjectGuid>
