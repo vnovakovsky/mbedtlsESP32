@@ -1,6 +1,5 @@
 #include "mbedtls/error.h"          // MBEDTLS_ERR_ERROR_CORRUPTION_DETECTED
 #include "mbedtls/net_sockets.h"    // MBEDTLS_ERR_NET_...
-//#define USE_SHARED_MEMORY
 
 #include "mmf_communication.h"
 #include <windows.h>
@@ -8,6 +7,25 @@
 #include <assert.h>
 #include <stdio.h>
 #include "channel.h"
+
+enum PointOfView
+{
+    PointOfView_None,
+    PointOfView_Server,
+    PointOfView_Client,
+};
+
+static BOOL create_event_mmf(mbedtls_net_context* pContext, enum PointOfView pointOfView);
+
+static void init_mmf(mbedtls_net_context* pContext);
+static BOOL create_mmf(mbedtls_net_context* pContext);
+
+static BOOL accept_connection_mmf(mbedtls_net_context* pContext);
+static BOOL connect_mmf(mbedtls_net_context* pContext);
+static BOOL close_connection_mmf(mbedtls_net_context* pContext);
+static void free_mmf(mbedtls_net_context* pContext);
+
+// implementation of channel interface for shared memory messaging.
 
 #ifdef USE_SHARED_MEMORY
 

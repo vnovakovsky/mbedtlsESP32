@@ -125,7 +125,7 @@ int main(int argc, char* argv[])
     enum PskLength { kPskMaxLength = 32 };
     uint8_t jpsk[kPskMaxLength] = "";
     strcpy(jpsk, kPskc);
-    uint8_t jpsk_length = strlen(jpsk);
+    uint8_t jpsk_length = (uint8_t) strlen(jpsk);
 	
 	uint8_t psk[kPskMaxLength] = "";
 
@@ -155,13 +155,9 @@ int main(int argc, char* argv[])
 #endif
 #if defined(USE_NET_SOCKETS)
     channel_init( &listen_fd );
-    
-#elif defined(USE_SHARED_MEMORY)
-    
-#elif defined(USE_NAMED_PIPE)
-
 #endif
     channel_init(&client_fd);
+
     mbedtls_ssl_init( &ssl );
     mbedtls_ssl_config_init( &conf );
     mbedtls_ssl_cookie_init( &cookie_ctx );
@@ -181,31 +177,20 @@ int main(int argc, char* argv[])
     printf( "  . Bind on udp/*/4433 ..." );
     fflush( stdout );
     channel_address_t address = { 0 };
-
+    mbedtls_net_context* setup_context = pContext;
 #if defined(USE_NET_SOCKETS)
     address.bind_ip = BIND_IP;
-    address.port = "4433";
-    address.proto = MBEDTLS_NET_PROTO_UDP;
-    if ((ret = channel_setup(&listen_fd, address)) != 0)
-    {
-        printf(" failed\n  ! mbedtls_net_bind returned %d\n\n", ret);
-        goto exit;
-}
-#elif defined(USE_SHARED_MEMORY)
-    if ((ret = channel_setup(pContext, address)) != 0)
-    {
-        printf(" failed\n  ! channel_setup returned %d\n\n", ret);
-        goto exit;
-    }
+    address.port    = "4433";
+    address.proto   = MBEDTLS_NET_PROTO_UDP;
+    setup_context   = &listen_fd;
 #elif defined(USE_NAMED_PIPE)
     address.pipe_name = SERVER_PIPE;
-    if ((ret = channel_setup(pContext, address)) != 0)
+#endif 
+    if ((ret = channel_setup(setup_context, address)) != 0)
     {
         printf(" failed\n  ! channel_setup returned %d\n\n", ret);
         goto exit;
     }
-#endif 
-    
     printf( " ok\n" );
 
     /*
@@ -298,18 +283,16 @@ reset:
     address.client_ip = client_ip;
     address.buf_size = sizeof(client_ip);
     address.ip_len = &cliip_len;
-    
-#elif defined(USE_SHARED_MEMORY) || defined(USE_NAMED_PIPE)
-	cliip_len = 1;
-    client_ip[0] = 1; // dummy value for shared memory implementation - varified for NULL inside library
-#endif
+#endif    
     if ((ret = channel_accept(&listen_fd, &client_fd, address)) != 0)
     {
         printf(" failed\n  ! mbedtls_net_accept returned %d\n\n", ret);
         goto exit;
     }
-    
-
+#if defined(USE_SHARED_MEMORY) || defined(USE_NAMED_PIPE)
+    cliip_len = 1;
+    client_ip[0] = 1; // dummy value for shared memory implementation - varified for NULL inside library
+#endif
     /* For HelloVerifyRequest cookies */
     if( ( ret = mbedtls_ssl_set_client_transport_id( &ssl,
                     client_ip, cliip_len ) ) != 0 )
@@ -322,10 +305,10 @@ reset:
     mbedtls_ssl_set_bio(&ssl, &client_fd,
         mbedtls_net_send, mbedtls_net_recv, mbedtls_net_recv_timeout);
 #elif defined(USE_SHARED_MEMORY)
-    mbedtls_ssl_set_bio(&ssl, &client_fd,
+    mbedtls_ssl_set_bio(&ssl, pContext,
         mbedtls_net_send_mmf, mbedtls_net_recv_mmf, mbedtls_net_recv_timeout_mmf);
 #elif defined(USE_NAMED_PIPE)
-    mbedtls_ssl_set_bio(&ssl, &client_fd,
+    mbedtls_ssl_set_bio(&ssl, pContext,
         mbedtls_net_send_pipe, mbedtls_net_recv_pipe, mbedtls_net_recv_timeout_pipe);
 #endif
 
@@ -454,7 +437,7 @@ close_notify:
 #elif defined(USE_NAMED_PIPE)
     channel_close(pContext);
 
-    if ((ret = channel_setup(&pContext, address)) != 0)
+    if ((ret = channel_setup(pContext, address)) != 0)
     {
         printf(" failed\n  ! mbedtls_net_bind_pipe returned %d\n\n", ret);
         goto exit;

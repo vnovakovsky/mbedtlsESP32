@@ -1,8 +1,7 @@
 #include "mbedtls/config.h"
-#include "mbedtls/net_sockets.h"
 
-typedef int channel_callback_t(mbedtls_net_context* pContext);
-//#define USE_NET_SOCKETS
+struct mbedtls_net_context; // forward declaration from mbedtls/net_sockets.h
+
 typedef struct tag_channel_address
 {
 #if defined(USE_NET_SOCKETS)
@@ -19,22 +18,13 @@ typedef struct tag_channel_address
 	const char* pipe_name;
 #endif
 }
-channel_address_t, * pchannel_address_t;
+channel_address_t;
 
-typedef struct tag_channel
-{
-	channel_callback_t* channel_init;
-	channel_callback_t* channel_connect;
-	channel_callback_t* channel_setup;
-	channel_callback_t* channel_accept;
-	channel_callback_t* channel_close;
-	channel_callback_t* channel_free;
-} 
-channel_t, * pchannel_t;
+// interface each messaging system should implement
 
-int channel_init	(mbedtls_net_context* pContext);
-int channel_connect	(mbedtls_net_context* pContext, channel_address_t address);
-int channel_setup	(mbedtls_net_context* pContext, channel_address_t address);
-int channel_accept	(mbedtls_net_context* pContextListen, mbedtls_net_context* pContextClient, channel_address_t address);
-int channel_close	(mbedtls_net_context* pContext);
-int channel_free	(mbedtls_net_context* pContext);
+int channel_init	(struct mbedtls_net_context* pContext);
+int channel_connect	(struct mbedtls_net_context* pContext, channel_address_t address);
+int channel_setup	(struct mbedtls_net_context* pContext, channel_address_t address);
+int channel_accept	(struct mbedtls_net_context* pContextListen, struct mbedtls_net_context* pContextClient, channel_address_t address);
+int channel_close	(struct mbedtls_net_context* pContext);
+int channel_free	(struct mbedtls_net_context* pContext);

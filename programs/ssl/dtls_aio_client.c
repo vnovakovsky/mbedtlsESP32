@@ -109,7 +109,6 @@ int main( int argc, char *argv[] )
     int ret, len;
     mbedtls_net_context server_fd;
     mbedtls_net_context* pContext = &server_fd;
-    uint32_t flags;
     unsigned char buf[1024];
     const char *pers = "dtls_client";
     int retry_left = MAX_RETRY;
@@ -124,8 +123,7 @@ int main( int argc, char *argv[] )
     mCipherSuites[1] = 0;
     enum PskLength { kPskMaxLength = 32 };
     uint8_t jpsk[kPskMaxLength] = "IAMCOMMISSIONER";              // PSKc
-    uint8_t jpsk_length = strlen(jpsk);
-    int rval;
+    uint8_t jpsk_length = (uint8_t) strlen(jpsk);
 
     char* PSKd;
     char message[1024] = "";

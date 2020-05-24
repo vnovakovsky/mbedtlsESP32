@@ -1,8 +1,21 @@
+#include <windows.h>
 #include "named_pipe_communication.h"
 #include "mbedtls/error.h"          // MBEDTLS_ERR_ERROR_CORRUPTION_DETECTED
 #include "mbedtls/net_sockets.h"    // MBEDTLS_ERR_NET_...
 #include "channel.h"
 
+const int MAX_CLIENTS = 1; /* Maximum number of clients for named pipe*/
+
+
+// implementation of channel interface for named pipe messaging.
+
+static int mbedtls_net_connect_pipe(mbedtls_net_context* context, const char* pipe_name);
+
+static int mbedtls_net_bind_pipe(mbedtls_net_context* context, const char* pipe_name);
+
+static int mbedtls_net_accept_pipe(mbedtls_net_context* context);
+
+static void mbedtls_net_free_pipe(mbedtls_net_context* ctx);
 
 #ifdef USE_NAMED_PIPE
 

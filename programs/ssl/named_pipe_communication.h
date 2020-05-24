@@ -1,19 +1,7 @@
-#include <windows.h>
 #include <stdint.h>
-
-#include "mbedtls\net_sockets.h"
 
 
 #define SERVER_PIPE "\\\\.\\PIPE\\SERVER"
-#define MAX_CLIENTS  1 /* Maximum number of clients for named pipe*/
-
-int mbedtls_net_connect_pipe(mbedtls_net_context* context, const char* pipe_name);
-
-int mbedtls_net_bind_pipe(mbedtls_net_context* context, const char* pipe_name);
-
-int mbedtls_net_accept_pipe(mbedtls_net_context* context);
-
-void mbedtls_net_free_pipe(mbedtls_net_context* ctx);
 
 
 /**

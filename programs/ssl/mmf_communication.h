@@ -1,10 +1,3 @@
-enum PointOfView
-{
-    PointOfView_None,
-    PointOfView_Server,
-    PointOfView_Client,
-};
-
 /**
  * \brief          Read at most 'len' characters. If no error occurs,
  *                 the actual amount read is returned.
@@ -55,15 +48,3 @@ int mbedtls_net_send_mmf(void* ctx, const unsigned char* buf, size_t len);
  */
 int mbedtls_net_recv_timeout_mmf(void* ctx, unsigned char* buf, size_t len,
     uint32_t timeout);
-
-typedef int                 BOOL;
-
-BOOL create_event_mmf(mbedtls_net_context* pContext, enum PointOfView pointOfView);
-
-void init_mmf               (mbedtls_net_context* pContext);
-BOOL create_mmf             (mbedtls_net_context* pContext);
-
-BOOL accept_connection_mmf  (mbedtls_net_context* pContext);
-BOOL connect_mmf            (mbedtls_net_context* pContext);
-BOOL close_connection_mmf   (mbedtls_net_context* pContext);
-void free_mmf               (mbedtls_net_context* pContext);
