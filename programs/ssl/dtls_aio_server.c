@@ -417,7 +417,7 @@ reset:
      */
 close_notify:
     printf( "  . Closing the connection..." );
-    Sleep(5000); // wait untill client will call mbedtls_ssl_close_notify (with old credentials)
+    Sleep(2000); // wait untill client will call mbedtls_ssl_close_notify (with old credentials)
                  // - otherwise server would change session password earlier then mbedtls_ssl_close_notify happens
 
     /* No error checking, the connection might be closed already */
