@@ -65,7 +65,7 @@ int main( void )
 #include "mbedtls/ctr_drbg.h"
 #include "mbedtls/error.h"
 #include "mbedtls/timing.h"
-
+#include "channel.h"
 #ifdef USE_SHARED_MEMORY
 #include "mmf_communication.h"
 #endif //USE_SHARED_MEMORY
@@ -100,31 +100,26 @@ static void my_debug( void *ctx, int level,
     fflush(  (FILE *) ctx  );
 }
 
-int main(int argc, char* argv[])
+int main( int argc, char *argv[] )
 {
     int ret, len;
     mbedtls_net_context server_fd;
-#if defined(USE_SHARED_MEMORY) || defined(USE_NAMED_PIPE)
     mbedtls_net_context* pContext = &server_fd;
-#endif
-    uint32_t flags;
     unsigned char buf[1024];
-    const char* pers = "dtls_client";
+    const char *pers = "dtls_client";
     int retry_left = MAX_RETRY;
 
     mbedtls_entropy_context entropy;
     mbedtls_ctr_drbg_context ctr_drbg;
     mbedtls_ssl_context ssl;
     mbedtls_ssl_config conf;
-    mbedtls_x509_crt cacert;
     mbedtls_timing_delay_context timer;
     int     mCipherSuites[2];
     mCipherSuites[0] = MBEDTLS_TLS_ECJPAKE_WITH_AES_128_CCM_8;
     mCipherSuites[1] = 0;
     enum PskLength { kPskMaxLength = 32 };
     uint8_t jpsk[kPskMaxLength] = "IAMCOMMISSIONER";              // PSKc
-    uint8_t jpsk_length = strlen(jpsk);
-    int rval;
+    uint8_t jpsk_length = (uint8_t) strlen(jpsk);
 
     char* PSKd;
     char message[1024] = "";
@@ -156,51 +151,44 @@ int main(int argc, char* argv[])
     /*
      * 0. Initialize the RNG and the session data
      */
-#if defined(USE_NET_SOCKETS)
-    mbedtls_net_init(&server_fd);
-#elif defined(USE_SHARED_MEMORY)
-    init_mmf(pContext);
-#elif defined(USE_NAMED_PIPE)
+    channel_init(pContext);
+    mbedtls_ssl_init( &ssl );
+    mbedtls_ssl_config_init( &conf );
+    mbedtls_ctr_drbg_init( &ctr_drbg );
 
-#endif
-    mbedtls_ssl_init(&ssl);
-    mbedtls_ssl_config_init(&conf);
-    mbedtls_ctr_drbg_init(&ctr_drbg);
+    mbedtls_printf( "\n  . Seeding the random number generator..." );
+    fflush( stdout );
 
-    mbedtls_printf("\n  . Seeding the random number generator...");
-    fflush(stdout);
-
-    mbedtls_entropy_init(&entropy);
-    if ((ret = mbedtls_ctr_drbg_seed(&ctr_drbg, mbedtls_entropy_func, &entropy,
-        (const unsigned char*)pers,
-        strlen(pers))) != 0)
+    mbedtls_entropy_init( &entropy );
+    if( ( ret = mbedtls_ctr_drbg_seed( &ctr_drbg, mbedtls_entropy_func, &entropy,
+                               (const unsigned char *) pers,
+                               strlen( pers ) ) ) != 0 )
     {
-        mbedtls_printf(" failed\n  ! mbedtls_ctr_drbg_seed returned %d\n", ret);
+        mbedtls_printf( " failed\n  ! mbedtls_ctr_drbg_seed returned %d\n", ret );
         goto exit;
     }
 
-    mbedtls_printf(" ok\n");
+    mbedtls_printf( " ok\n" );
 
     /*
      * 1. Start the connection
      */
-    mbedtls_printf("  . Connecting to udp/%s/%s...", SERVER_NAME, SERVER_PORT);
-    fflush(stdout);
+    mbedtls_printf( "  . Connecting to udp/%s/%s...", SERVER_NAME, SERVER_PORT );
+    fflush( stdout );
+    channel_address_t address = { 0 };
 #if defined(USE_NET_SOCKETS)
-    if ((ret = mbedtls_net_connect(&server_fd, SERVER_ADDR,
-        SERVER_PORT, MBEDTLS_NET_PROTO_UDP)) != 0)
+    address.bind_ip = SERVER_ADDR;
+    address.port    = SERVER_PORT;
+    address.proto   = MBEDTLS_NET_PROTO_UDP;
+#elif defined(USE_SHARED_MEMORY)
+    
+
+#endif
+    if ((ret = channel_connect(pContext, address)) != 0)
     {
         mbedtls_printf(" failed\n  ! mbedtls_net_connect returned %d\n\n", ret);
         goto exit;
     }
-#elif defined(USE_SHARED_MEMORY)
-
-    if (!connect_mmf(pContext))
-    {
-        mbedtls_printf(" failed\n  ! connect_mmf returned %d\n\n", ret);
-        goto exit;
-    }
-#endif
 
     mbedtls_printf( " ok\n" );
 
@@ -339,9 +327,6 @@ close_notify:
     do ret = mbedtls_ssl_close_notify( &ssl );
     while( ret == MBEDTLS_ERR_SSL_WANT_WRITE );
     ret = 0;
-#ifdef USE_SHARED_MEMORY
-    close_connection_mmf(pContext);
-#endif // USE_SHARED_MEMORY
     mbedtls_printf( " done\n" );
 
     /*
@@ -358,12 +343,7 @@ exit:
     }
 #endif
 
-#if defined(USE_NET_SOCKETS)
-    mbedtls_net_free(&server_fd);
-#elif defined(USE_SHARED_MEMORY)
-    free_mmf(pContext);
-#endif
-
+    channel_free(pContext);
     mbedtls_ssl_free( &ssl );
     mbedtls_ssl_config_free( &conf );
     mbedtls_ctr_drbg_free( &ctr_drbg );
