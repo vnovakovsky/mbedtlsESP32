@@ -1,3 +1,6 @@
+The goal of this project is to develop security protocol for mesh network that consists of IoT devices with radio interface. Considering that devices are very restricted in memory, computantional power and battery power. Security of consumer IoT devices have another restrictions: user experienceWe can't expect that user can maintain such infrustructures like Kerberos or PKI. Therefore deployment or generation of keys should be special. The whitepaper (inside doc directory) proposes the way of managing keys, authentication of devices and encryption.
+
+
 README for Mbed TLS
 ===================
 
